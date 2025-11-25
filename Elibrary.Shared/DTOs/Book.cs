@@ -1,15 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ELibrary.Shared.Entities
+namespace ELibrary.Shared.DTOs
 {
-    public class Book
+    public class BookDto
     {
-        public Book()
-        {
-            Idate = DateTime.UtcNow;
-            Udate = DateTime.UtcNow;
-        }
-
         /// <summary>
         /// Unique identifier
         /// </summary>
@@ -19,20 +13,21 @@ namespace ELibrary.Shared.Entities
         /// Name of the book (required)
         /// </summary>
         [Required]
-        [MaxLength(1000)]
+        [Display(Name = "Název")]
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
         /// Name of the author.
         /// </summary>
         [Required]
-        [MaxLength(1000)]
+        [Display(Name = "Autor")]
         public string Author { get; set; } = string.Empty;
 
         /// <summary>
         /// Year of release.
         /// </summary>
         [Required]
+        [Display(Name = "Rok vydání")]
         public DateTime Year { get; set; } = DateTime.MinValue;
 
         /// <summary>
@@ -45,16 +40,7 @@ namespace ELibrary.Shared.Entities
         /// <summary>
         /// Quantity of books in stock (default: 0)
         /// </summary>
+        [Display(Name = "Počet kusů")]
         public int ActualQuantity { get; set; } = 0;
-
-        /// <summary>
-        /// Date when the product was created
-        /// </summary>
-        public DateTime Idate { get; set; }
-
-        /// <summary>
-        /// Date when the product was last updated
-        /// </summary>
-        public DateTime Udate { get; set; }
     }
 }

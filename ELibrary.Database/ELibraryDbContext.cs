@@ -43,10 +43,10 @@ public class ELibraryDbContext : DbContext
                 .HasMaxLength(1000);
 
             entity.Property(e => e.ISBN)
-                .HasPrecision(18, 2);
+                .HasMaxLength(1000);
 
             entity.Property(e => e.Year)
-                .HasMaxLength(2000);
+                .IsRequired();
 
             entity.Property(e => e.ActualQuantity)
                 .IsRequired();
@@ -72,36 +72,36 @@ public class ELibraryDbContext : DbContext
         {
             new Book
             {
-                ID = new Guid(),
+                ID = new Guid("c3984d72-57a4-432d-88b1-38290f93450e"),
                 Name = "Empire of Silence",
                 Author = "Christopher Ruocchio",
                 ISBN = "9780756419264",
-                Year = new DateTime(2018, DateTimeKind.Utc),
+                Year = new DateTime(2018, 1, 1, 1, 0, 0, DateTimeKind.Utc),
                 ActualQuantity = 3,
-                Idate = new DateTime(2025, 11, 21, 24, 0, 0, DateTimeKind.Utc).AddDays(-30),
-                Udate = new DateTime(2025, 11, 21, 24, 0, 0, DateTimeKind.Utc).AddDays(-30)
+                Idate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc),
+                Udate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc)
             },
             new Book
             {
-                ID = new Guid(),
+                ID = new Guid("c3984d72-57a4-432d-88b1-38290f93450a"),
                 Name = "Howling Dark",
                 Author = "Christopher Ruocchio",
                 ISBN = "9780756419271",
-                Year = new DateTime(2019, DateTimeKind.Utc),
+                Year = new DateTime(2019, 1, 1, 1, 0, 0, DateTimeKind.Utc),
                 ActualQuantity = 3,
-                Idate = new DateTime(2025, 11, 21, 24, 0, 0, DateTimeKind.Utc).AddDays(-30),
-                Udate = new DateTime(2025, 11, 21, 24, 0, 0, DateTimeKind.Utc).AddDays(-30)
+                Idate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc),
+                Udate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc)
             },
             new Book
             {
-                ID = new Guid(),
+                ID = new Guid("c3984d72-57a4-432d-88b1-38290f93450b"),
                 Name = "Demon in white",
                 Author = "Christopher Ruocchio",
                 ISBN = "9780756419288",
-                Year = new DateTime(2020, DateTimeKind.Utc),
+                Year = new DateTime(2020, 11, 24, 1, 0, 0, DateTimeKind.Utc),
                 ActualQuantity = 3,
-                Idate = new DateTime(2025, 11, 21, 24, 0, 0, DateTimeKind.Utc).AddDays(-30),
-                Udate = new DateTime(2025, 11, 21, 24, 0, 0, DateTimeKind.Utc).AddDays(-30)
+                Idate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc),
+                Udate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc)
             },
         };
 
