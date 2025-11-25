@@ -23,16 +23,16 @@ namespace ELibrary.WebApp.Controllers
         [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<Book>>> GetAllBooks()
         {
-            var books = await _bookRepository.GetAllAsync();
+            var books = (await _bookRepository.GetAllAsync()).Select(MapToDto);
             return Ok(books);
         }
 
         [HttpGet("criteria")]
         [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<Book>>> FindBooksByCriteria(string? name, string? author, string? iban)
+        public async Task<ActionResult<IEnumerable<Book>>> FindBooksByCriteria(string? name, string? author, string? isbn)
         {
-            var books = (await _bookRepository.GetFilteredBooksAsync(name, author, iban)).Select(MapToDto);
+            var books = (await _bookRepository.GetFilteredBooksAsync(name, author, isbn)).Select(MapToDto);
 
             if (!books.Any())
             {
@@ -40,6 +40,76 @@ namespace ELibrary.WebApp.Controllers
             }
 
             return Ok(books);
+        }
+
+
+        [HttpPatch("borrow")]
+        [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<BookDto>> BorrowBook(Guid bookId, string? customerName)
+        {
+            var startOperation = DateTime.UtcNow;
+            var book = await _bookRepository.GetByIdAsync(bookId);
+            if (book == null)
+            {
+                _logger.LogWarning("Book with ID {BookId} not found.", bookId);
+                return NotFound();
+            }
+
+            if (book.ActualQuantity <= 0)
+            {
+                _logger.LogInformation("Book with ID {BookId} is out of stock.", bookId);
+                return BadRequest("Book is out of stock.");
+            }
+
+            book.ActualQuantity -= 1;
+
+            if (book.Udate >= startOperation)
+            {
+                _logger.LogInformation("Quantity of Book with ID {BookId} has been just updated by another user.", bookId);
+                return BadRequest($"Quantity of Book {bookId} has been just updated by another user.");
+            }
+
+            var result = await _bookRepository.UpdateAsync(book, startOperation);
+
+            if (!result.Success)
+            {
+                return Conflict($"Quantity of Book {bookId} has been just updated by another user.");
+            }
+
+            return Ok(MapToDto(result.UpdatedBook));
+        }
+
+        [HttpPatch("return")]
+        [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<BookDto>> ReturnBook(Guid bookId, string? customerName)
+        {
+            var startOperation = DateTime.UtcNow;
+            var book = await _bookRepository.GetByIdAsync(bookId);
+            if (book == null)
+            {
+                _logger.LogWarning("Book with ID {BookId} not found.", bookId);
+                return NotFound();
+            }
+
+            book.ActualQuantity += 1;
+
+            if (book.Udate >= startOperation)
+            { 
+                _logger.LogInformation("Quantity of Book with ID {BookId} has been just updated by another user.", bookId);
+                return BadRequest($"Quantity of Book {bookId} has been just updated by another user.");
+            }
+
+            var result = await _bookRepository.UpdateAsync(book, startOperation);
+
+            if (!result.Success)
+            {
+                return Conflict($"Quantity of Book {bookId} has been just updated by another user.");
+            }
+
+            return Ok(MapToDto(result.UpdatedBook));
         }
 
         private BookDto MapToDto(Book book)

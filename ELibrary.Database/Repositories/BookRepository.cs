@@ -33,7 +33,7 @@ namespace ELibrary.Database.Repositories
         /// Get all books in database.
         /// </summary>
         /// <returns>Collection of all books.</returns>
-        public async Task<Book?> GetById(Guid id)
+        public async Task<Book?> GetByIdAsync(Guid id)
         {
             return await _context.Books.FindAsync(id);
         }
@@ -76,7 +76,7 @@ namespace ELibrary.Database.Repositories
         public async Task<Book> AddAsync(Book book)
         {
             var entry = await _context.Books.AddAsync(book);
-            _ = _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
             return entry.Entity;
         }
 
@@ -84,10 +84,25 @@ namespace ELibrary.Database.Repositories
         /// Updates an existing book in the database
         /// </summary>
         /// <param name="book">The book with updated information</param>
-        public void Update(Book book)
+        /// <param name="udate">The update time.</param>
+        /// <returns>The updated book with updated information</returns>
+        public async Task<(bool Success, Book? UpdatedBook)> UpdateAsync(Book book, DateTime? udate)
         {
-            _context.Books.Update(book);
-            _ = _context.SaveChangesAsync();
+            try
+            {
+                if (udate != null)
+                {
+                    book.Udate = udate.Value;
+                }
+
+                var entry = _context.Books.Update(book);
+                await _context.SaveChangesAsync();
+                return (true, entry.Entity);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return (false, null);
+            }
         }
     }
 }
