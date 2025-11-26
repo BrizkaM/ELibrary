@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ELibrary.Database.Migrations
 {
     [DbContext(typeof(ELibraryDbContext))]
-    [Migration("20251125132658_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251126101537_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -39,16 +39,15 @@ namespace ELibrary.Database.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("Idate")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("Udate")
-                        .HasColumnType("TEXT");
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("BLOB");
 
                     b.Property<DateTime>("Year")
                         .HasColumnType("TEXT");
@@ -64,9 +63,7 @@ namespace ELibrary.Database.Migrations
                             ActualQuantity = 3,
                             Author = "Christopher Ruocchio",
                             ISBN = "9780756419264",
-                            Idate = new DateTime(2025, 11, 24, 1, 0, 0, 0, DateTimeKind.Utc),
                             Name = "Empire of Silence",
-                            Udate = new DateTime(2025, 11, 24, 1, 0, 0, 0, DateTimeKind.Utc),
                             Year = new DateTime(2018, 1, 1, 1, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -75,9 +72,7 @@ namespace ELibrary.Database.Migrations
                             ActualQuantity = 3,
                             Author = "Christopher Ruocchio",
                             ISBN = "9780756419271",
-                            Idate = new DateTime(2025, 11, 24, 1, 0, 0, 0, DateTimeKind.Utc),
                             Name = "Howling Dark",
-                            Udate = new DateTime(2025, 11, 24, 1, 0, 0, 0, DateTimeKind.Utc),
                             Year = new DateTime(2019, 1, 1, 1, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -86,9 +81,7 @@ namespace ELibrary.Database.Migrations
                             ActualQuantity = 3,
                             Author = "Christopher Ruocchio",
                             ISBN = "9780756419288",
-                            Idate = new DateTime(2025, 11, 24, 1, 0, 0, 0, DateTimeKind.Utc),
                             Name = "Demon in white",
-                            Udate = new DateTime(2025, 11, 24, 1, 0, 0, 0, DateTimeKind.Utc),
                             Year = new DateTime(2020, 11, 24, 1, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });

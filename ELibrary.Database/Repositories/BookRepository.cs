@@ -1,4 +1,5 @@
 ﻿using ELibrary.Shared.Entities;
+using ELibrary.Shared.Enums;
 using ELibrary.Shared.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -84,24 +85,93 @@ namespace ELibrary.Database.Repositories
         /// Updates an existing book in the database
         /// </summary>
         /// <param name="book">The book with updated information</param>
-        /// <param name="udate">The update time.</param>
         /// <returns>The updated book with updated information</returns>
-        public async Task<(bool Success, Book? UpdatedBook)> UpdateAsync(Book book, DateTime? udate)
+        public async Task<Book?> UpdateAsync(Book book)
         {
             try
             {
-                if (udate != null)
-                {
-                    book.Udate = udate.Value;
-                }
-
                 var entry = _context.Books.Update(book);
                 await _context.SaveChangesAsync();
-                return (true, entry.Entity);
+                return entry.Entity;
             }
             catch (DbUpdateConcurrencyException)
             {
-                return (false, null);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Decreases quantity of a book.
+        /// </summary>
+        /// <param name="bookId">The id of the book to borrow</param>
+        /// <returns>True if success and updated borrowed book.</returns>
+        public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> BorrowBookAsync(Guid bookId)
+        {
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    var book = await _context.Books.FindAsync(bookId);
+
+                    if (book == null)
+                    {
+                        await transaction.RollbackAsync();
+                        return (CustomerBookOperationResult.NotFound, null);
+                    }
+
+                    if (book.ActualQuantity <= 0)
+                    {
+                        await transaction.RollbackAsync();
+                        return (CustomerBookOperationResult.OutOfStock, null);
+                    }
+
+                    book.ActualQuantity -= 1;
+                    _context.Books.Update(book);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return (CustomerBookOperationResult.Success, book);
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    await transaction.RollbackAsync();
+                    return (CustomerBookOperationResult.Conflict, null);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Increases quantity iof a book.
+        /// </summary>
+        /// <param name="bookId">The id of the book to return</param>
+        /// <returns>True if success and updated returned book.</returns>
+        public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> ReturnBookAsync(Guid bookId)
+        {
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    var book = await _context.Books.FindAsync(bookId);
+
+                    if (book == null)
+                    {
+                        await transaction.RollbackAsync();
+                        return (CustomerBookOperationResult.NotFound, null);
+                    }
+
+                    // Increment quantity
+                    book.ActualQuantity += 1;
+                    _context.Books.Update(book);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return (CustomerBookOperationResult.Success, book);
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    await transaction.RollbackAsync();
+                    return (CustomerBookOperationResult.Conflict, null);
+                }
             }
         }
     }

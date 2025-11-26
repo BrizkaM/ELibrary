@@ -1,5 +1,6 @@
 using ELibrary.Shared.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace ELibrary.Database;
 
@@ -51,12 +52,14 @@ public class ELibraryDbContext : DbContext
             entity.Property(e => e.ActualQuantity)
                 .IsRequired();
 
-            entity.Property(e => e.Idate)
-                .IsRequired();
-                        
-            entity.Property(e => e.Udate)
-                .IsRequired();
+            entity.Property(e => e.RowVersion)
+                .IsConcurrencyToken()
+                .ValueGeneratedOnAddOrUpdate();
         });
+
+        modelBuilder.Entity<Book>()
+            .Property(b => b.RowVersion)
+            .IsRowVersion();
 
         // Initial seed
         SeedData(modelBuilder);
@@ -78,8 +81,6 @@ public class ELibraryDbContext : DbContext
                 ISBN = "9780756419264",
                 Year = new DateTime(2018, 1, 1, 1, 0, 0, DateTimeKind.Utc),
                 ActualQuantity = 3,
-                Idate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc),
-                Udate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc)
             },
             new Book
             {
@@ -89,8 +90,6 @@ public class ELibraryDbContext : DbContext
                 ISBN = "9780756419271",
                 Year = new DateTime(2019, 1, 1, 1, 0, 0, DateTimeKind.Utc),
                 ActualQuantity = 3,
-                Idate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc),
-                Udate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc)
             },
             new Book
             {
@@ -100,8 +99,6 @@ public class ELibraryDbContext : DbContext
                 ISBN = "9780756419288",
                 Year = new DateTime(2020, 11, 24, 1, 0, 0, DateTimeKind.Utc),
                 ActualQuantity = 3,
-                Idate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc),
-                Udate = new DateTime(2025, 11, 24, 1, 0, 0, DateTimeKind.Utc)
             },
         };
 

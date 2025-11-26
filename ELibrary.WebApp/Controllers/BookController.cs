@@ -2,6 +2,7 @@ using ELibrary.Shared.DTOs;
 using ELibrary.Shared.Entities;
 using ELibrary.Shared.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace ELibrary.WebApp.Controllers
 {
@@ -21,7 +22,7 @@ namespace ELibrary.WebApp.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<Book>>> GetAllBooks()
+        public async Task<ActionResult<IEnumerable<BookDto>>> GetAllBooks()
         {
             var books = (await _bookRepository.GetAllAsync()).Select(MapToDto);
             return Ok(books);
@@ -30,11 +31,11 @@ namespace ELibrary.WebApp.Controllers
         [HttpGet("criteria")]
         [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<Book>>> FindBooksByCriteria(string? name, string? author, string? isbn)
+        public async Task<ActionResult<IEnumerable<BookDto>>> FindBooksByCriteria(string? name, string? author, string? isbn)
         {
             var books = (await _bookRepository.GetFilteredBooksAsync(name, author, isbn)).Select(MapToDto);
 
-            if (!books.Any())
+            if (books != null && !books.Any())
             {
                 return NotFound();
             }
@@ -42,74 +43,55 @@ namespace ELibrary.WebApp.Controllers
             return Ok(books);
         }
 
-
         [HttpPatch("borrow")]
-        [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<BookDto>> BorrowBook(Guid bookId, string? customerName)
         {
-            var startOperation = DateTime.UtcNow;
-            var book = await _bookRepository.GetByIdAsync(bookId);
-            if (book == null)
-            {
-                _logger.LogWarning("Book with ID {BookId} not found.", bookId);
-                return NotFound();
-            }
+            var updatedBook = await _bookRepository.BorrowBookAsync(bookId);
 
-            if (book.ActualQuantity <= 0)
-            {
-                _logger.LogInformation("Book with ID {BookId} is out of stock.", bookId);
-                return BadRequest("Book is out of stock.");
-            }
-
-            book.ActualQuantity -= 1;
-
-            if (book.Udate >= startOperation)
-            {
-                _logger.LogInformation("Quantity of Book with ID {BookId} has been just updated by another user.", bookId);
-                return BadRequest($"Quantity of Book {bookId} has been just updated by another user.");
-            }
-
-            var result = await _bookRepository.UpdateAsync(book, startOperation);
-
-            if (!result.Success)
-            {
-                return Conflict($"Quantity of Book {bookId} has been just updated by another user.");
-            }
-
-            return Ok(MapToDto(result.UpdatedBook));
+            return EvaluateCustomerOperation(bookId, updatedBook);
         }
 
+
         [HttpPatch("return")]
-        [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<BookDto>> ReturnBook(Guid bookId, string? customerName)
         {
-            var startOperation = DateTime.UtcNow;
-            var book = await _bookRepository.GetByIdAsync(bookId);
-            if (book == null)
+            var updatedBook = await _bookRepository.ReturnBookAsync(bookId);
+
+            return EvaluateCustomerOperation(bookId, updatedBook);
+        }
+
+        internal ActionResult<BookDto> EvaluateCustomerOperation(Guid bookId, (Shared.Enums.CustomerBookOperationResult OperationResult, Book? UpdatedBook) updatedBook)
+        {
+            if (updatedBook.OperationResult == Shared.Enums.CustomerBookOperationResult.NotFound)
             {
-                _logger.LogWarning("Book with ID {BookId} not found.", bookId);
-                return NotFound();
+                var message = $"Book with ID {bookId} not found.";
+                _logger.LogWarning(message);
+                return NotFound(message);
             }
 
-            book.ActualQuantity += 1;
-
-            if (book.Udate >= startOperation)
-            { 
-                _logger.LogInformation("Quantity of Book with ID {BookId} has been just updated by another user.", bookId);
-                return BadRequest($"Quantity of Book {bookId} has been just updated by another user.");
-            }
-
-            var result = await _bookRepository.UpdateAsync(book, startOperation);
-
-            if (!result.Success)
+            if (updatedBook.OperationResult == Shared.Enums.CustomerBookOperationResult.Conflict)
             {
-                return Conflict($"Quantity of Book {bookId} has been just updated by another user.");
+                var message = $"Book with ID {bookId} updated by another user.";
+                _logger.LogWarning(message);
+                return Conflict(message);
             }
 
-            return Ok(MapToDto(result.UpdatedBook));
+            if (updatedBook.OperationResult == Shared.Enums.CustomerBookOperationResult.OutOfStock)
+            {
+                var message = $"Book with ID {bookId} is out of stock.";
+                return BadRequest(message);
+            }
+
+            if (updatedBook.UpdatedBook == null)
+                return BadRequest("Unable to update the book.");
+
+            return Ok(MapToDto(updatedBook.UpdatedBook));
         }
 
         private BookDto MapToDto(Book book)
@@ -126,3 +108,4 @@ namespace ELibrary.WebApp.Controllers
         }
     }
 }
+ 

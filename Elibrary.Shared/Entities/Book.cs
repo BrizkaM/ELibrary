@@ -4,12 +4,6 @@ namespace ELibrary.Shared.Entities
 {
     public class Book
     {
-        public Book()
-        {
-            Idate = DateTime.UtcNow;
-            Udate = DateTime.UtcNow;
-        }
-
         /// <summary>
         /// Unique identifier
         /// </summary>
@@ -47,14 +41,7 @@ namespace ELibrary.Shared.Entities
         /// </summary>
         public int ActualQuantity { get; set; } = 0;
 
-        /// <summary>
-        /// Date when the product was created
-        /// </summary>
-        public DateTime Idate { get; set; }
-
-        /// <summary>
-        /// Date when the product was last updated
-        /// </summary>
-        public DateTime Udate { get; set; }
+        [Timestamp]
+        public byte[]? RowVersion { get; set; }
     }
 }
