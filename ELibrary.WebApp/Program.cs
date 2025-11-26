@@ -3,8 +3,6 @@ using ELibrary.Database.Repositories;
 using ELibrary.Shared.Interfaces;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
-using System.Reflection;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +22,7 @@ builder.Services.AddDbContext<ELibraryDbContext>(options =>
 
 // Repository
 builder.Services.AddScoped<IBookRepository, BookRepository>();
+builder.Services.AddScoped<IBorrowBookRecordRepository, BorrowBookRepository>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

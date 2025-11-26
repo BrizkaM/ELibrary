@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ELibrary.Database.Migrations
 {
     [DbContext(typeof(ELibraryDbContext))]
-    [Migration("20251126101537_Initial")]
-    partial class Initial
+    [Migration("20251126124035_InitialWithSeed")]
+    partial class InitialWithSeed
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -44,10 +44,11 @@ namespace ELibrary.Database.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
-                    b.Property<byte[]>("RowVersion")
+                    b.Property<long>("RowVersion")
                         .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("BLOB");
+                        .ValueGeneratedOnUpdate()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0L);
 
                     b.Property<DateTime>("Year")
                         .HasColumnType("TEXT");
@@ -64,6 +65,7 @@ namespace ELibrary.Database.Migrations
                             Author = "Christopher Ruocchio",
                             ISBN = "9780756419264",
                             Name = "Empire of Silence",
+                            RowVersion = 0L,
                             Year = new DateTime(2018, 1, 1, 1, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -73,6 +75,7 @@ namespace ELibrary.Database.Migrations
                             Author = "Christopher Ruocchio",
                             ISBN = "9780756419271",
                             Name = "Howling Dark",
+                            RowVersion = 0L,
                             Year = new DateTime(2019, 1, 1, 1, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -82,8 +85,54 @@ namespace ELibrary.Database.Migrations
                             Author = "Christopher Ruocchio",
                             ISBN = "9780756419288",
                             Name = "Demon in white",
+                            RowVersion = 0L,
                             Year = new DateTime(2020, 11, 24, 1, 0, 0, 0, DateTimeKind.Utc)
                         });
+                });
+
+            modelBuilder.Entity("ELibrary.Shared.Entities.BorrowBookRecord", b =>
+                {
+                    b.Property<Guid>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BookID")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("BookID");
+
+                    b.ToTable("BorrowBookRecords");
+                });
+
+            modelBuilder.Entity("ELibrary.Shared.Entities.BorrowBookRecord", b =>
+                {
+                    b.HasOne("ELibrary.Shared.Entities.Book", "Book")
+                        .WithMany("BorrowBookRecords")
+                        .HasForeignKey("BookID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+                });
+
+            modelBuilder.Entity("ELibrary.Shared.Entities.Book", b =>
+                {
+                    b.Navigation("BorrowBookRecords");
                 });
 #pragma warning restore 612, 618
         }

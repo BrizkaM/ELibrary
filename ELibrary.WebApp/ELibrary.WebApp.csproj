@@ -18,9 +18,4 @@
     <ProjectReference Include="..\ELibrary.Database\ELibrary.Database.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Handlers\" />
-    <Folder Include="NewFolder\" />
-  </ItemGroup>
-
 </Project>

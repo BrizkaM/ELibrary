@@ -2,7 +2,6 @@ using ELibrary.Shared.DTOs;
 using ELibrary.Shared.Entities;
 using ELibrary.Shared.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace ELibrary.WebApp.Controllers
 {
@@ -12,11 +11,13 @@ namespace ELibrary.WebApp.Controllers
     public class BookController : ControllerBase
     {
         private readonly IBookRepository _bookRepository;
+        private readonly IBorrowBookRecordRepository _borrowBookRecordRepository;
         private readonly ILogger<BookController> _logger;
 
-        public BookController(IBookRepository bookRepository, ILogger<BookController> logger)
+        public BookController(IBookRepository bookRepository, IBorrowBookRecordRepository borrowBookRecordRepository, ILogger<BookController> logger)
         {
             _bookRepository = bookRepository;
+            _borrowBookRecordRepository = borrowBookRecordRepository;
             _logger = logger;
         }
 
@@ -51,7 +52,24 @@ namespace ELibrary.WebApp.Controllers
         {
             var updatedBook = await _bookRepository.BorrowBookAsync(bookId);
 
-            return EvaluateCustomerOperation(bookId, updatedBook);
+            var actionResult = EvaluateCustomerOperation(bookId, updatedBook);
+
+            if (actionResult.Result is OkObjectResult)
+            {
+                var borrowRecord = new BorrowBookRecord
+                {
+                    ID = Guid.NewGuid(),
+                    Book = updatedBook.UpdatedBook!,
+                    BookID = bookId,
+                    CustomerName = customerName ?? "anonym",
+                    Action = "Borrowed",
+                    Date = DateTime.UtcNow
+                };
+
+                await _borrowBookRecordRepository.AddAsync(borrowRecord);
+            }
+
+            return actionResult;
         }
 
 
@@ -62,8 +80,24 @@ namespace ELibrary.WebApp.Controllers
         public async Task<ActionResult<BookDto>> ReturnBook(Guid bookId, string? customerName)
         {
             var updatedBook = await _bookRepository.ReturnBookAsync(bookId);
+            var actionResult = EvaluateCustomerOperation(bookId, updatedBook);
 
-            return EvaluateCustomerOperation(bookId, updatedBook);
+            if (actionResult.Result is OkResult)
+            {
+                var borrowRecord = new BorrowBookRecord
+                {
+                    ID = Guid.NewGuid(),
+                    Book = updatedBook.UpdatedBook!,
+                    BookID = bookId,
+                    CustomerName = customerName ?? "anonym",
+                    Action = "Returned",
+                    Date = DateTime.UtcNow
+                };
+
+                await _borrowBookRecordRepository.AddAsync(borrowRecord);
+            }
+
+            return actionResult;
         }
 
         internal ActionResult<BookDto> EvaluateCustomerOperation(Guid bookId, (Shared.Enums.CustomerBookOperationResult OperationResult, Book? UpdatedBook) updatedBook)

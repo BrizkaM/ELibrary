@@ -1,6 +1,5 @@
 using ELibrary.Shared.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace ELibrary.Database;
 
@@ -18,9 +17,14 @@ public class ELibraryDbContext : DbContext
     }
 
     /// <summary>
-    /// Gets or sets the products database set.
+    /// Gets or sets the Books database set.
     /// </summary>
     public DbSet<Book> Books { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the Borrow-Book-Records database set.
+    /// </summary>
+    public DbSet<BorrowBookRecord> BorrowBookRecords { get; set; } = null!;
 
     /// <summary>
     /// Configures the model and relationships for the e-shop database.
@@ -30,7 +34,7 @@ public class ELibraryDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configure Product entity
+        // Configure book entity
         modelBuilder.Entity<Book>(entity =>
         {
             entity.HasKey(e => e.ID);
@@ -54,12 +58,35 @@ public class ELibraryDbContext : DbContext
 
             entity.Property(e => e.RowVersion)
                 .IsConcurrencyToken()
-                .ValueGeneratedOnAddOrUpdate();
+                .ValueGeneratedOnUpdate()
+                .HasDefaultValue(0L);
         });
 
-        modelBuilder.Entity<Book>()
-            .Property(b => b.RowVersion)
-            .IsRowVersion();
+        // Configure borrow book record entity
+        modelBuilder.Entity<BorrowBookRecord>(entity =>
+        {
+            entity.HasKey(e => e.ID);
+
+            entity.Property(e => e.BookID)
+                .IsRequired();
+
+            entity.Property(e => e.CustomerName)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(e => e.Action)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(e => e.Date)
+                .IsRequired();
+
+            entity.HasOne(bbr => bbr.Book)
+                .WithMany(b => b.BorrowBookRecords)
+                .HasForeignKey(bbr => bbr.BookID)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+        });
 
         // Initial seed
         SeedData(modelBuilder);

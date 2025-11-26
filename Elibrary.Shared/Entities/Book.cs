@@ -40,8 +40,9 @@ namespace ELibrary.Shared.Entities
         /// Quantity of books in stock (default: 0)
         /// </summary>
         public int ActualQuantity { get; set; } = 0;
+ 
+        public ICollection<BorrowBookRecord> BorrowBookRecords { get; set; } = new List<BorrowBookRecord>();
 
-        [Timestamp]
-        public byte[]? RowVersion { get; set; }
+        public long RowVersion { get; set; }
     }
 }
