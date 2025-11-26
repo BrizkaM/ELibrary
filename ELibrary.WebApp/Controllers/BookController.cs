@@ -82,7 +82,7 @@ namespace ELibrary.WebApp.Controllers
             var updatedBook = await _bookRepository.ReturnBookAsync(bookId);
             var actionResult = EvaluateCustomerOperation(bookId, updatedBook);
 
-            if (actionResult.Result is OkResult)
+            if (actionResult.Result is OkObjectResult)
             {
                 var borrowRecord = new BorrowBookRecord
                 {

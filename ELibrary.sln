@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ELibrary.Database", "ELibra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ELibrary.Shared", "Elibrary.Shared\ELibrary.Shared.csproj", "{7E38CC10-EC42-4712-9DFD-B6D392A46D00}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ELibrary.BlazorClient", "ELibrary.BlazorClient\ELibrary.BlazorClient.csproj", "{0D348BE1-7026-AE3F-8FEA-07BE40E7A08A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{7E38CC10-EC42-4712-9DFD-B6D392A46D00}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E38CC10-EC42-4712-9DFD-B6D392A46D00}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E38CC10-EC42-4712-9DFD-B6D392A46D00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D348BE1-7026-AE3F-8FEA-07BE40E7A08A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D348BE1-7026-AE3F-8FEA-07BE40E7A08A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D348BE1-7026-AE3F-8FEA-07BE40E7A08A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D348BE1-7026-AE3F-8FEA-07BE40E7A08A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

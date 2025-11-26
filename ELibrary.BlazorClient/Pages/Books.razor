@@ -1,0 +1,438 @@
+@page "/"
+@inject BookApiService BookApi
+
+<PageTitle>E-Library - Správa knih</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Levá část - Knihy -->
+        <div class="col-md-8">
+            <h2>Knihy</h2>
+
+            <!-- Vyhledávací formulář -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Vyhledávání</h5>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Název knihy</label>
+                            <input type="text" class="form-control" @bind="searchName" @bind:event="oninput" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Autor</label>
+                            <input type="text" class="form-control" @bind="searchAuthor" @bind:event="oninput" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">ISBN</label>
+                            <input type="text" class="form-control" @bind="searchIsbn" @bind:event="oninput" />
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-primary" @onclick="HandleSearchBooks">
+                            <i class="bi bi-search"></i> Vyhledat
+                        </button>
+                        <button type="button" class="btn btn-secondary ms-2" @onclick="HandleLoadAllBooks">
+                            <i class="bi bi-arrow-clockwise"></i> Zobrazit vše
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zprávy -->
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="alert @(messageType == "success" ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+                    @message
+                    <button type="button" class="btn-close" @onclick="@(() => ClearMessage())"></button>
+                </div>
+            }
+
+            <!-- Seznam knih -->
+            @if (isLoading)
+            {
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Načítání...</span>
+                    </div>
+                </div>
+            }
+            else if (books.Count == 0)
+            {
+                <div class="alert alert-info">Žádné knihy nebyly nalezeny.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Název</th>
+                                <th>Autor</th>
+                                <th>Rok vydání</th>
+                                <th>ISBN</th>
+                                <th>Skladem</th>
+                                <th>Akce</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var book in books)
+                            {
+                                var bookId = book.ID;
+                                <tr>
+                                    <td>@book.Name</td>
+                                    <td>@book.Author</td>
+                                    <td>@book.Year.Year</td>
+                                    <td>@book.ISBN</td>
+                                    <td>
+                                        <span class="badge @(book.ActualQuantity > 0 ? "bg-success" : "bg-danger")">
+                                            @book.ActualQuantity ks
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-primary me-1" 
+                                                @onclick="@(() => HandleShowBorrowDialog(book))"
+                                                disabled="@(book.ActualQuantity <= 0)">
+                                            Půjčit
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-success" 
+                                                @onclick="@(() => HandleShowReturnDialog(book))">
+                                            Vrátit
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <!-- Pravá část - Historie zápůjček -->
+        <div class="col-md-4">
+            <h2>Historie zápůjček</h2>
+            
+            <button type="button" class="btn btn-info mb-3" @onclick="HandleLoadBorrowRecords">
+                <i class="bi bi-arrow-clockwise"></i> Načíst historii
+            </button>
+
+            @if (isLoadingRecords)
+            {
+                <div class="text-center">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Načítání...</span>
+                    </div>
+                </div>
+            }
+            else if (borrowRecords.Count == 0)
+            {
+                <div class="alert alert-info">Žádné záznamy. Klikněte na "Načíst historii".</div>
+            }
+            else
+            {
+                <div class="list-group" style="max-height: 600px; overflow-y: auto;">
+                    @foreach (var record in borrowRecords)
+                    {
+                        var book = allBooks.FirstOrDefault(b => b.ID == record.BookID);
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">@(book?.Name ?? $"Kniha ID: {record.BookID}")</h6>
+                                <small class="badge @(record.Action == "Borrowed" ? "bg-primary" : "bg-success")">
+                                    @record.Action
+                                </small>
+                            </div>
+                            <p class="mb-1">
+                                <small><strong>Zákazník:</strong> @record.CustomerName</small>
+                            </p>
+                            @if (book != null)
+                            {
+                                <p class="mb-1">
+                                    <small><strong>Autor:</strong> @book.Author</small>
+                                </p>
+                            }
+                            <small class="text-muted">@record.Date.ToString("dd.MM.yyyy HH:mm")</small>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Dialog pro půjčení knihy -->
+@if (showBorrowDialog)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Půjčit knihu: @selectedBook?.Name</h5>
+                    <button type="button" class="btn-close" @onclick="HandleCloseBorrowDialog"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Jméno zákazníka (nepovinné)</label>
+                        <input type="text" class="form-control" @bind="customerName" @bind:event="oninput" placeholder="anonym" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HandleCloseBorrowDialog">Zrušit</button>
+                    <button type="button" class="btn btn-primary" @onclick="HandleBorrowBook">Půjčit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Dialog pro vrácení knihy -->
+@if (showReturnDialog)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Vrátit knihu: @selectedBook?.Name</h5>
+                    <button type="button" class="btn-close" @onclick="HandleCloseReturnDialog"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Jméno zákazníka (nepovinné)</label>
+                        <input type="text" class="form-control" @bind="customerName" @bind:event="oninput" placeholder="anonym" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HandleCloseReturnDialog">Zrušit</button>
+                    <button type="button" class="btn btn-success" @onclick="HandleReturnBook">Vrátit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<BookDto> books = new();
+    private List<BookDto> allBooks = new();
+    private List<BorrowBookRecordDto> borrowRecords = new();
+    
+    private string searchName = string.Empty;
+    private string searchAuthor = string.Empty;
+    private string searchIsbn = string.Empty;
+    
+    private bool isLoading = false;
+    private bool isLoadingRecords = false;
+    private string message = string.Empty;
+    private string messageType = "success";
+    
+    private bool showBorrowDialog = false;
+    private bool showReturnDialog = false;
+    private BookDto? selectedBook = null;
+    private string customerName = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllBooks();
+    }
+
+    private void ClearMessage()
+    {
+        message = string.Empty;
+    }
+
+    private async Task LoadAllBooks()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            searchName = string.Empty;
+            searchAuthor = string.Empty;
+            searchIsbn = string.Empty;
+            books = await BookApi.GetAllBooksAsync();
+            allBooks = books;
+        }
+        catch (Exception ex)
+        {
+            message = $"Chyba při načítání knih: {ex.Message}";
+            messageType = "danger";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleLoadAllBooks()
+    {
+        await LoadAllBooks();
+    }
+
+    private async Task SearchBooks()
+    {
+        if (string.IsNullOrWhiteSpace(searchName) && 
+            string.IsNullOrWhiteSpace(searchAuthor) && 
+            string.IsNullOrWhiteSpace(searchIsbn))
+        {
+            await LoadAllBooks();
+            return;
+        }
+
+        isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            books = await BookApi.FindBooksByCriteriaAsync(searchName, searchAuthor, searchIsbn);
+        }
+        catch (Exception ex)
+        {
+            message = $"Chyba při vyhledávání: {ex.Message}";
+            messageType = "danger";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleSearchBooks()
+    {
+        await SearchBooks();
+    }
+
+    private void HandleShowBorrowDialog(BookDto book)
+    {
+        selectedBook = book;
+        customerName = string.Empty;
+        showBorrowDialog = true;
+        StateHasChanged();
+    }
+
+    private void HandleCloseBorrowDialog()
+    {
+        showBorrowDialog = false;
+        selectedBook = null;
+        customerName = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task BorrowBook()
+    {
+        if (selectedBook == null) return;
+
+        try
+        {
+            var result = await BookApi.BorrowBookAsync(selectedBook.ID, customerName);
+            
+            if (result.Success)
+            {
+                messageType = "success";
+                message = result.Message;
+                await LoadAllBooks();
+            }
+            else
+            {
+                messageType = "danger";
+                message = result.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            messageType = "danger";
+            message = $"Chyba: {ex.Message}";
+        }
+        finally
+        {
+            HandleCloseBorrowDialog();
+        }
+    }
+
+    private async Task HandleBorrowBook()
+    {
+        await BorrowBook();
+    }
+
+    private void HandleShowReturnDialog(BookDto book)
+    {
+        selectedBook = book;
+        customerName = string.Empty;
+        showReturnDialog = true;
+        StateHasChanged();
+    }
+
+    private void HandleCloseReturnDialog()
+    {
+        showReturnDialog = false;
+        selectedBook = null;
+        customerName = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task ReturnBook()
+    {
+        if (selectedBook == null) return;
+
+        try
+        {
+            var result = await BookApi.ReturnBookAsync(selectedBook.ID, customerName);
+            
+            if (result.Success)
+            {
+                messageType = "success";
+                message = result.Message;
+                await LoadAllBooks();
+            }
+            else
+            {
+                messageType = "danger";
+                message = result.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            messageType = "danger";
+            message = $"Chyba: {ex.Message}";
+        }
+        finally
+        {
+            HandleCloseReturnDialog();
+        }
+    }
+
+    private async Task HandleReturnBook()
+    {
+        await ReturnBook();
+    }
+
+    private async Task LoadBorrowRecords()
+    {
+        isLoadingRecords = true;
+        StateHasChanged();
+        
+        try
+        {
+            if (allBooks.Count == 0)
+            {
+                allBooks = await BookApi.GetAllBooksAsync();
+            }
+            
+            borrowRecords = await BookApi.GetAllBorrowBookRecordsAsync();
+        }
+        catch (Exception ex)
+        {
+            message = $"Chyba při načítání historie: {ex.Message}";
+            messageType = "danger";
+        }
+        finally
+        {
+            isLoadingRecords = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleLoadBorrowRecords()
+    {
+        await LoadBorrowRecords();
+    }
+}

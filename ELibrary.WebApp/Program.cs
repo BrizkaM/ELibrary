@@ -113,6 +113,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Logger.LogInformation("E-Library API is starting...");
-app.Logger.LogInformation("Swagger UI available at: https://localhost:7001/swagger"); //TODO: Setup swagger
 
 app.Run();
