@@ -11,13 +11,13 @@ namespace ELibrary.WebApp.Controllers
     public class BookController : ControllerBase
     {
         private readonly IBookRepository _bookRepository;
-        private readonly IBorrowBookRecordRepository _borrowBookRecordRepository;
+        private readonly IBookService _bookService;
         private readonly ILogger<BookController> _logger;
 
-        public BookController(IBookRepository bookRepository, IBorrowBookRecordRepository borrowBookRecordRepository, ILogger<BookController> logger)
+        public BookController(IBookRepository bookRepository, IBookService bookService, ILogger<BookController> logger)
         {
             _bookRepository = bookRepository;
-            _borrowBookRecordRepository = borrowBookRecordRepository;
+            _bookService = bookService;
             _logger = logger;
         }
 
@@ -44,60 +44,38 @@ namespace ELibrary.WebApp.Controllers
             return Ok(books);
         }
 
-        [HttpPatch("borrow")]
+        [HttpPost("create")]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<BookDto>> CreateBook(Guid bookId, string? customerName)
+        {
+            throw new NotImplementedException();
+        }
+
+        [HttpPost("borrow")]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status409Conflict)]
         public async Task<ActionResult<BookDto>> BorrowBook(Guid bookId, string? customerName)
         {
-            var updatedBook = await _bookRepository.BorrowBookAsync(bookId);
+            var updatedBook = await _bookService.BorrowBookAsync(bookId, customerName ?? "anonym");
 
-            var actionResult = EvaluateCustomerOperation(bookId, updatedBook);
-
-            if (actionResult.Result is OkObjectResult)
-            {
-                var borrowRecord = new BorrowBookRecord
-                {
-                    ID = Guid.NewGuid(),
-                    Book = updatedBook.UpdatedBook!,
-                    BookID = bookId,
-                    CustomerName = customerName ?? "anonym",
-                    Action = "Borrowed",
-                    Date = DateTime.UtcNow
-                };
-
-                await _borrowBookRecordRepository.AddAsync(borrowRecord);
-            }
-
-            return actionResult;
+            return EvaluateCustomerOperation(bookId, updatedBook);
         }
 
 
-        [HttpPatch("return")]
+        [HttpPost("return")]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status409Conflict)]
         public async Task<ActionResult<BookDto>> ReturnBook(Guid bookId, string? customerName)
         {
-            var updatedBook = await _bookRepository.ReturnBookAsync(bookId);
-            var actionResult = EvaluateCustomerOperation(bookId, updatedBook);
+            var updatedBook = await _bookService.ReturnBookAsync(bookId, customerName ?? "anonym");
 
-            if (actionResult.Result is OkObjectResult)
-            {
-                var borrowRecord = new BorrowBookRecord
-                {
-                    ID = Guid.NewGuid(),
-                    Book = updatedBook.UpdatedBook!,
-                    BookID = bookId,
-                    CustomerName = customerName ?? "anonym",
-                    Action = "Returned",
-                    Date = DateTime.UtcNow
-                };
-
-                await _borrowBookRecordRepository.AddAsync(borrowRecord);
-            }
-
-            return actionResult;
+            return EvaluateCustomerOperation(bookId, updatedBook);
         }
 
         internal ActionResult<BookDto> EvaluateCustomerOperation(Guid bookId, (Shared.Enums.CustomerBookOperationResult OperationResult, Book? UpdatedBook) updatedBook)

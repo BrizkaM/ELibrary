@@ -1,6 +1,4 @@
 ﻿using ELibrary.Shared.Entities;
-using ELibrary.Shared.Enums;
-
 namespace ELibrary.Shared.Interfaces
 {
     public interface IBookRepository
@@ -13,8 +11,6 @@ namespace ELibrary.Shared.Interfaces
 
         Task<Book> AddAsync(Book book);
 
-        Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> BorrowBookAsync(Guid bookId);
-
-        Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> ReturnBookAsync(Guid bookId);
+        void Update(Book book);
     }
 }

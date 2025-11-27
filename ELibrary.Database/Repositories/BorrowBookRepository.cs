@@ -37,7 +37,6 @@ namespace ELibrary.Database.Repositories
         public async Task<BorrowBookRecord> AddAsync(BorrowBookRecord bookRecord)
         {
             var entry = await _context.BorrowBookRecords.AddAsync(bookRecord);
-            await _context.SaveChangesAsync();
             return entry.Entity;
         }
     }

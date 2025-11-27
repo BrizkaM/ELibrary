@@ -63,8 +63,8 @@ namespace ELibrary.BlazorClient.Services
                 if (!string.IsNullOrWhiteSpace(customerName))
                     query += $"&customerName={Uri.EscapeDataString(customerName)}";
 
-                var response = await _httpClient.PatchAsync($"Book/borrow{query}", null);
-                
+                var response = await _httpClient.PostAsync($"Book/borrow{query}", null);
+
                 if (response.IsSuccessStatusCode)
                 {
                     return (true, "Kniha byla úspěšně půjčena.");
@@ -90,8 +90,8 @@ namespace ELibrary.BlazorClient.Services
                 if (!string.IsNullOrWhiteSpace(customerName))
                     query += $"&customerName={Uri.EscapeDataString(customerName)}";
 
-                var response = await _httpClient.PatchAsync($"Book/return{query}", null);
-                
+                var response = await _httpClient.PostAsync($"Book/return{query}", null);
+
                 if (response.IsSuccessStatusCode)
                 {
                     return (true, "Kniha byla úspěšně vrácena.");

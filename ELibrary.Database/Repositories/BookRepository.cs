@@ -77,7 +77,6 @@ namespace ELibrary.Database.Repositories
         public async Task<Book> AddAsync(Book book)
         {
             var entry = await _context.Books.AddAsync(book);
-            await _context.SaveChangesAsync();
             return entry.Entity;
         }
 
@@ -86,93 +85,9 @@ namespace ELibrary.Database.Repositories
         /// </summary>
         /// <param name="book">The book with updated information</param>
         /// <returns>The updated book with updated information</returns>
-        public async Task<Book?> UpdateAsync(Book book)
+        public void Update(Book book)
         {
-            try
-            {
-                var entry = _context.Books.Update(book);
-                await _context.SaveChangesAsync();
-                return entry.Entity;
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Decreases quantity of a book.
-        /// </summary>
-        /// <param name="bookId">The id of the book to borrow</param>
-        /// <returns>True if success and updated borrowed book.</returns>
-        public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> BorrowBookAsync(Guid bookId)
-        {
-            using (var transaction = await _context.Database.BeginTransactionAsync())
-            {
-                try
-                {
-                    var book = await _context.Books.FindAsync(bookId);
-
-                    if (book == null)
-                    {
-                        await transaction.RollbackAsync();
-                        return (CustomerBookOperationResult.NotFound, null);
-                    }
-
-                    if (book.ActualQuantity <= 0)
-                    {
-                        await transaction.RollbackAsync();
-                        return (CustomerBookOperationResult.OutOfStock, null);
-                    }
-
-                    book.ActualQuantity -= 1;
-                    _context.Books.Update(book);
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    return (CustomerBookOperationResult.Success, book);
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    await transaction.RollbackAsync();
-                    return (CustomerBookOperationResult.Conflict, null);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Increases quantity iof a book.
-        /// </summary>
-        /// <param name="bookId">The id of the book to return</param>
-        /// <returns>True if success and updated returned book.</returns>
-        public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> ReturnBookAsync(Guid bookId)
-        {
-            using (var transaction = await _context.Database.BeginTransactionAsync())
-            {
-                try
-                {
-                    var book = await _context.Books.FindAsync(bookId);
-
-                    if (book == null)
-                    {
-                        await transaction.RollbackAsync();
-                        return (CustomerBookOperationResult.NotFound, null);
-                    }
-
-                    // Increment quantity
-                    book.ActualQuantity += 1;
-                    _context.Books.Update(book);
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    return (CustomerBookOperationResult.Success, book);
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    await transaction.RollbackAsync();
-                    return (CustomerBookOperationResult.Conflict, null);
-                }
-            }
+            _ = _context.Books.Update(book);
         }
     }
 }
