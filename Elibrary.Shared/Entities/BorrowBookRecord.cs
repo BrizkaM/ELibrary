@@ -38,6 +38,6 @@ namespace ELibrary.Shared.Entities
 
         [ForeignKey(nameof(BookID))]
         [Required]
-        public required Book Book { get; set; } = default!;
+        public Book Book { get; set; } = default!;
     }
 }

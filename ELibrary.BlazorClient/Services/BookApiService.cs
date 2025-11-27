@@ -64,7 +64,7 @@ namespace ELibrary.BlazorClient.Services
                     query += $"&customerName={Uri.EscapeDataString(customerName)}";
 
                 var response = await _httpClient.PostAsync($"Book/borrow{query}", null);
-
+                
                 if (response.IsSuccessStatusCode)
                 {
                     return (true, "Kniha byla úspěšně půjčena.");
@@ -91,7 +91,7 @@ namespace ELibrary.BlazorClient.Services
                     query += $"&customerName={Uri.EscapeDataString(customerName)}";
 
                 var response = await _httpClient.PostAsync($"Book/return{query}", null);
-
+                
                 if (response.IsSuccessStatusCode)
                 {
                     return (true, "Kniha byla úspěšně vrácena.");
@@ -120,6 +120,29 @@ namespace ELibrary.BlazorClient.Services
             {
                 _logger.LogError(ex, "Chyba při načítání záznamů o půjčkách");
                 return new List<BorrowBookRecordDto>();
+            }
+        }
+
+        public async Task<(bool Success, string Message)> CreateBookAsync(BookDto bookDto)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("Book", bookDto);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, "Kniha byla úspěšně vytvořena.");
+                }
+                else
+                {
+                    var errorMessage = await response.Content.ReadAsStringAsync();
+                    return (false, $"Chyba: {errorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Chyba při vytváření knihy");
+                return (false, $"Chyba: {ex.Message}");
             }
         }
     }

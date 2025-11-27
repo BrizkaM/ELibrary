@@ -34,6 +34,9 @@
                         <button type="button" class="btn btn-secondary ms-2" @onclick="HandleLoadAllBooks">
                             <i class="bi bi-arrow-clockwise"></i> Zobrazit vše
                         </button>
+                        <button type="button" class="btn btn-success ms-2" @onclick="ShowCreateBookDialog">
+                            <i class="bi bi-plus-circle"></i> Přidat knihu
+                        </button>
                     </div>
                 </div>
             </div>
@@ -208,6 +211,61 @@
     </div>
 }
 
+<!-- Dialog pro vytvoření nové knihy -->
+@if (showCreateBookDialog)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Přidat novou knihu</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCreateBookDialog"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Název knihy *</label>
+                        <input type="text" class="form-control" @bind="newBook.Name" @bind:event="oninput" placeholder="např. Empire of Silence" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Autor *</label>
+                        <input type="text" class="form-control" @bind="newBook.Author" @bind:event="oninput" placeholder="např. Christopher Ruocchio" />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Rok vydání *</label>
+                                <input type="number" class="form-control" @bind="yearInput" @bind:event="oninput" placeholder="např. 2018" min="1000" max="9999" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Počet kusů *</label>
+                                <input type="number" class="form-control" @bind="newBook.ActualQuantity" @bind:event="oninput" placeholder="např. 5" min="0" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ISBN *</label>
+                        <input type="text" class="form-control" @bind="newBook.ISBN" @bind:event="oninput" placeholder="např. 9780756419264" />
+                    </div>
+                    @if (!string.IsNullOrEmpty(validationError))
+                    {
+                        <div class="alert alert-danger">
+                            @validationError
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseCreateBookDialog">Zrušit</button>
+                    <button type="button" class="btn btn-success" @onclick="CreateBook">
+                        <i class="bi bi-plus-circle"></i> Vytvořit knihu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<BookDto> books = new();
     private List<BookDto> allBooks = new();
@@ -224,8 +282,13 @@
     
     private bool showBorrowDialog = false;
     private bool showReturnDialog = false;
+    private bool showCreateBookDialog = false;
     private BookDto? selectedBook = null;
     private string customerName = string.Empty;
+    
+    private BookDto newBook = new();
+    private int yearInput = DateTime.Now.Year;
+    private string validationError = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -434,5 +497,84 @@
     private async Task HandleLoadBorrowRecords()
     {
         await LoadBorrowRecords();
+    }
+
+    private void ShowCreateBookDialog()
+    {
+        newBook = new BookDto
+        {
+            Year = new DateTime(DateTime.Now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            ActualQuantity = 1
+        };
+        yearInput = DateTime.Now.Year;
+        validationError = string.Empty;
+        showCreateBookDialog = true;
+        StateHasChanged();
+    }
+
+    private void CloseCreateBookDialog()
+    {
+        showCreateBookDialog = false;
+        newBook = new();
+        validationError = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task CreateBook()
+    {
+        // Validace
+        if (string.IsNullOrWhiteSpace(newBook.Name))
+        {
+            validationError = "Název knihy je povinný.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newBook.Author))
+        {
+            validationError = "Autor je povinný.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newBook.ISBN))
+        {
+            validationError = "ISBN je povinné.";
+            return;
+        }
+
+        if (yearInput < 1000 || yearInput > 9999)
+        {
+            validationError = "Rok vydání musí být mezi 1000 a 9999.";
+            return;
+        }
+
+        if (newBook.ActualQuantity < 0)
+        {
+            validationError = "Počet kusů nemůže být záporný.";
+            return;
+        }
+
+        // Nastavení roku
+        newBook.Year = new DateTime(yearInput, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        try
+        {
+            var result = await BookApi.CreateBookAsync(newBook);
+            
+            if (result.Success)
+            {
+                messageType = "success";
+                message = result.Message;
+                await LoadAllBooks();
+                CloseCreateBookDialog();
+            }
+            else
+            {
+                validationError = result.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            validationError = $"Chyba: {ex.Message}";
+        }
     }
 }

@@ -44,13 +44,22 @@ namespace ELibrary.WebApp.Controllers
             return Ok(books);
         }
 
-        [HttpPost("create")]
-        [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BookDto), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(BookDto), StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<BookDto>> CreateBook(Guid bookId, string? customerName)
+        [HttpPost]
+        [ProducesResponseType(typeof(BookDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<BookDto>> CreateBook([FromBody] BookDto bookDto)
         {
-            throw new NotImplementedException();
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var createdBook = await _bookService.CreateBookAsync(MapFromDto(bookDto));
+
+            return CreatedAtAction(
+                nameof(GetAllBooks),
+                new { id = createdBook.ID },
+                MapToDto(createdBook));
         }
 
         [HttpPost("borrow")]
@@ -116,6 +125,18 @@ namespace ELibrary.WebApp.Controllers
                 Year = book.Year,
                 ISBN = book.ISBN,
                 ActualQuantity = book.ActualQuantity
+            };
+        }
+
+        private Book MapFromDto(BookDto bookDto)
+        {
+            return new Book
+            {
+                Name = bookDto.Name,
+                Author = bookDto.Author,
+                Year = bookDto.Year,
+                ISBN = bookDto.ISBN,
+                ActualQuantity = bookDto.ActualQuantity
             };
         }
     }

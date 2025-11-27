@@ -21,6 +21,27 @@ namespace ELibrary.WebApp.Services
             _context = context;
         }
 
+        public async Task<Book> CreateBookAsync(Book book)
+        {
+            try
+            {
+                book.ID = Guid.NewGuid();
+                book.RowVersion = 0;
+
+                var addedBook = await _bookRepo.AddAsync(book);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Book created successfully with ID: {BookId}", addedBook.ID);
+
+                return addedBook;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while creating book");
+                throw;
+            }
+        }
+
         public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> BorrowBookAsync(Guid bookId, string customerName)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
