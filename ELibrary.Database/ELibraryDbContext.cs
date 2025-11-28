@@ -9,7 +9,7 @@ namespace ELibrary.Database;
 public class ELibraryDbContext : DbContext
 {
     /// <summary>
-    /// Initializes a new instance of the EShopDbContext class.
+    /// Initializes a new instance of the ELibraryDbContext class.
     /// </summary>
     /// <param name="options">The options to be used by this DbContext.</param>
     public ELibraryDbContext(DbContextOptions<ELibraryDbContext> options) : base(options)
@@ -27,7 +27,7 @@ public class ELibraryDbContext : DbContext
     public DbSet<BorrowBookRecord> BorrowBookRecords { get; set; } = null!;
 
     /// <summary>
-    /// Configures the model and relationships for the e-shop database.
+    /// Configures the model and relationships for the ELibrary database.
     /// </summary>
     /// <param name="modelBuilder">The builder being used to construct the model for this context.</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)

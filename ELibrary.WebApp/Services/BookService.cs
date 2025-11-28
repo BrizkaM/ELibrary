@@ -6,6 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ELibrary.WebApp.Services
 {
+    /// <summary>
+    /// Book service implementation.
+    /// </summary>
     public class BookService : IBookService
     {
         private readonly IBookRepository _bookRepo;
@@ -13,6 +16,13 @@ namespace ELibrary.WebApp.Services
         private readonly ILogger<BookService> _logger;
         private readonly ELibraryDbContext _context;
 
+        /// <summary>
+        /// Creates a new instance of the BookService class.
+        /// </summary>
+        /// <param name="bookRepo">Book repository.</param>
+        /// <param name="borrowBookRepo">Borrow book repository.</param>
+        /// <param name="logger">The logger.</param>
+        /// <param name="context">DB context.</param>
         public BookService(IBookRepository bookRepo, IBorrowBookRecordRepository borrowBookRepo, ILogger<BookService> logger, ELibraryDbContext context)
         {
             _bookRepo = bookRepo;
@@ -21,6 +31,7 @@ namespace ELibrary.WebApp.Services
             _context = context;
         }
 
+        /// <inheritdoc/>
         public async Task<Book> CreateBookAsync(Book book)
         {
             if(book.ActualQuantity < 0)
@@ -41,6 +52,7 @@ namespace ELibrary.WebApp.Services
             return addedBook;
         }
 
+        /// <inheritdoc/>
         public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> BorrowBookAsync(Guid bookId, string customerName)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -93,6 +105,7 @@ namespace ELibrary.WebApp.Services
             }
         }
 
+        /// <inheritdoc/>
         public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> ReturnBookAsync(Guid bookId, string customerName)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();

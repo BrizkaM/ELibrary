@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ELibrary.Database.Repositories
 {
+    /// <summary>
+    /// Borrow book repository implementation.
+    /// </summary>
     public class BorrowBookRepository : IBorrowBookRecordRepository
     {
         private readonly ELibraryDbContext _context;
@@ -18,10 +21,7 @@ namespace ELibrary.Database.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        /// <summary>
-        /// Get all book records in database.
-        /// </summary>
-        /// <returns>Collection of all book records.</returns>
+        /// <inheritdoc/>
         public async Task<IEnumerable<BorrowBookRecord>> GetAllAsync()
         {
             return await _context.BorrowBookRecords
@@ -29,11 +29,7 @@ namespace ELibrary.Database.Repositories
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Adds a new book record to the database.
-        /// </summary>
-        /// <param name="bookRecord">The book record to add</param>
-        /// <returns>The added book record with updated information</returns>
+        /// <inheritdoc/>
         public async Task<BorrowBookRecord> AddAsync(BorrowBookRecord bookRecord)
         {
             var entry = await _context.BorrowBookRecords.AddAsync(bookRecord);

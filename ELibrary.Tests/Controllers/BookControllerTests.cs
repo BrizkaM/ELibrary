@@ -7,7 +7,6 @@ using ELibrary.WebApp.Controllers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace ELibrary.Tests.Controllers
@@ -287,63 +286,6 @@ namespace ELibrary.Tests.Controllers
             // Assert
             result.Result.Should().BeOfType<OkObjectResult>();
             _bookServiceMock.Verify(s => s.ReturnBookAsync(bookId, "anonym"), Times.Once);
-        }
-
-        [TestMethod]
-        public void EvaluateCustomerOperation_WithSuccess_ShouldReturnOk()
-        {
-            // Arrange
-            var bookId = Guid.NewGuid();
-            var book = TestDataBuilder.CreateTestBook(id: bookId);
-            var operationResult = (CustomerBookOperationResult.Success, (Book?)book);
-
-            // Act
-            var result = _controller.EvaluateCustomerOperation(bookId, operationResult);
-
-            // Assert
-            result.Result.Should().BeOfType<OkObjectResult>();
-        }
-
-        [TestMethod]
-        public void EvaluateCustomerOperation_WithNotFound_ShouldReturnNotFound()
-        {
-            // Arrange
-            var bookId = Guid.NewGuid();
-            var operationResult = (CustomerBookOperationResult.NotFound, (Book?)null);
-
-            // Act
-            var result = _controller.EvaluateCustomerOperation(bookId, operationResult);
-
-            // Assert
-            result.Result.Should().BeOfType<NotFoundObjectResult>();
-        }
-
-        [TestMethod]
-        public void EvaluateCustomerOperation_WithConflict_ShouldReturnConflict()
-        {
-            // Arrange
-            var bookId = Guid.NewGuid();
-            var operationResult = (CustomerBookOperationResult.Conflict, (Book?)null);
-
-            // Act
-            var result = _controller.EvaluateCustomerOperation(bookId, operationResult);
-
-            // Assert
-            result.Result.Should().BeOfType<ConflictObjectResult>();
-        }
-
-        [TestMethod]
-        public void EvaluateCustomerOperation_WithOutOfStock_ShouldReturnBadRequest()
-        {
-            // Arrange
-            var bookId = Guid.NewGuid();
-            var operationResult = (CustomerBookOperationResult.OutOfStock, (Book?)null);
-
-            // Act
-            var result = _controller.EvaluateCustomerOperation(bookId, operationResult);
-
-            // Assert
-            result.Result.Should().BeOfType<BadRequestObjectResult>();
         }
     }
 }

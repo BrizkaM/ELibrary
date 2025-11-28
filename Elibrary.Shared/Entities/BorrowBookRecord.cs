@@ -17,7 +17,7 @@ namespace ELibrary.Shared.Entities
         public Guid BookID { get; set; }
 
         /// <summary>
-        /// Customer name (required)
+        /// Customer name.
         /// </summary>
         [Required]
         [MaxLength(1000)]
@@ -36,6 +36,9 @@ namespace ELibrary.Shared.Entities
         [Required]
         public DateTime Date { get; set; }
 
+        /// <summary>
+        /// Book associated with this record. Foreign key relationship.
+        /// </summary>
         [ForeignKey(nameof(BookID))]
         [Required]
         public Book Book { get; set; } = default!;

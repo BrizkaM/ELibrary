@@ -40,9 +40,16 @@ namespace ELibrary.Shared.Entities
         /// Quantity of books in stock (default: 0)
         /// </summary>
         public int ActualQuantity { get; set; } = 0;
- 
+
+        /// <summary>
+        /// Borrow book records associated with this book. Foreign key relationship.
+        /// </summary>
         public ICollection<BorrowBookRecord> BorrowBookRecords { get; set; } = new List<BorrowBookRecord>();
 
+        /// <summary>
+        /// Row version for concurrency control.
+        /// </summary>
+        /// <remarks>Manualy handled due to SQLite. Not testes due to SQLite.</remarks>
         public long RowVersion { get; set; }
     }
 }

@@ -2,6 +2,9 @@
 
 namespace ELibrary.Shared.DTOs
 {
+    /// <summary>
+    /// Borrow Book Record Data Transfer Object for web API communication.
+    /// </summary>
     public class BorrowBookRecordDto
     {
         /// <summary>
