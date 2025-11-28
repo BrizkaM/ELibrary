@@ -11,6 +11,9 @@ using Moq;
 
 namespace ELibrary.Tests.Controllers
 {
+    /// <summary>
+    /// Tests for BookController API endpoints including CRUD operations, book borrowing, and returning functionality.
+    /// </summary>
     [TestClass]
     public class BookControllerTests
     {
@@ -31,6 +34,9 @@ namespace ELibrary.Tests.Controllers
                 _loggerMock.Object);
         }
 
+        /// <summary>
+        /// Verifies that GetAllBooks returns OK status with a collection of books.
+        /// </summary>
         [TestMethod]
         public async Task GetAllBooks_ShouldReturnOkWithBooks()
         {
@@ -49,6 +55,9 @@ namespace ELibrary.Tests.Controllers
             returnedBooks.Should().HaveCount(3);
         }
 
+        /// <summary>
+        /// Verifies that FindBooksByCriteria returns OK status with matching books when valid criteria provided.
+        /// </summary>
         [TestMethod]
         public async Task FindBooksByCriteria_WithValidCriteria_ShouldReturnOkWithBooks()
         {
@@ -68,6 +77,9 @@ namespace ELibrary.Tests.Controllers
             returnedBooks!.First().Name.Should().Be("Specific Book");
         }
 
+        /// <summary>
+        /// Verifies that FindBooksByCriteria returns NotFound when no books match the criteria.
+        /// </summary>
         [TestMethod]
         public async Task FindBooksByCriteria_WithNoMatches_ShouldReturnNotFound()
         {
@@ -82,6 +94,9 @@ namespace ELibrary.Tests.Controllers
             result.Result.Should().BeOfType<NotFoundResult>();
         }
 
+        /// <summary>
+        /// Verifies that CreateBook returns CreatedAtAction status when a valid book is provided.
+        /// </summary>
         [TestMethod]
         public async Task CreateBook_WithValidBook_ShouldReturnCreatedAtAction()
         {
@@ -119,6 +134,9 @@ namespace ELibrary.Tests.Controllers
             returnedBook!.Name.Should().Be("New Book");
         }
 
+        /// <summary>
+        /// Verifies that CreateBook returns BadRequest when model validation fails.
+        /// </summary>
         [TestMethod]
         public async Task CreateBook_WithInvalidModel_ShouldReturnBadRequest()
         {
@@ -133,13 +151,16 @@ namespace ELibrary.Tests.Controllers
             result.Result.Should().BeOfType<BadRequestObjectResult>();
         }
 
+        /// <summary>
+        /// Verifies that BorrowBook returns OK status with updated book when borrowing succeeds.
+        /// </summary>
         [TestMethod]
         public async Task BorrowBook_WithValidBook_ShouldReturnOkWithUpdatedBook()
         {
             // Arrange
             var bookId = Guid.NewGuid();
             var updatedBook = TestDataBuilder.CreateTestBook(id: bookId, quantity: 4);
-            
+
             _bookServiceMock.Setup(s => s.BorrowBookAsync(bookId, "John Doe"))
                 .ReturnsAsync((CustomerBookOperationResult.Success, updatedBook));
 
@@ -154,6 +175,9 @@ namespace ELibrary.Tests.Controllers
             returnedBook!.ActualQuantity.Should().Be(4);
         }
 
+        /// <summary>
+        /// Verifies that BorrowBook returns NotFound when the book doesn't exist.
+        /// </summary>
         [TestMethod]
         public async Task BorrowBook_WithNonExistentBook_ShouldReturnNotFound()
         {
@@ -171,6 +195,9 @@ namespace ELibrary.Tests.Controllers
             notFoundResult!.Value.Should().BeOfType<string>();
         }
 
+        /// <summary>
+        /// Verifies that BorrowBook returns BadRequest when the book is out of stock.
+        /// </summary>
         [TestMethod]
         public async Task BorrowBook_WithOutOfStockBook_ShouldReturnBadRequest()
         {
@@ -186,6 +213,9 @@ namespace ELibrary.Tests.Controllers
             result.Result.Should().BeOfType<BadRequestObjectResult>();
         }
 
+        /// <summary>
+        /// Verifies that BorrowBook returns Conflict when a concurrency conflict occurs.
+        /// </summary>
         [TestMethod]
         public async Task BorrowBook_WithConflict_ShouldReturnConflict()
         {
@@ -201,13 +231,16 @@ namespace ELibrary.Tests.Controllers
             result.Result.Should().BeOfType<ConflictObjectResult>();
         }
 
+        /// <summary>
+        /// Verifies that BorrowBook uses "anonym" as customer name when null is provided.
+        /// </summary>
         [TestMethod]
         public async Task BorrowBook_WithNullCustomerName_ShouldUseAnonymous()
         {
             // Arrange
             var bookId = Guid.NewGuid();
             var updatedBook = TestDataBuilder.CreateTestBook(id: bookId, quantity: 4);
-            
+
             _bookServiceMock.Setup(s => s.BorrowBookAsync(bookId, "anonym"))
                 .ReturnsAsync((CustomerBookOperationResult.Success, updatedBook));
 
@@ -219,13 +252,16 @@ namespace ELibrary.Tests.Controllers
             _bookServiceMock.Verify(s => s.BorrowBookAsync(bookId, "anonym"), Times.Once);
         }
 
+        /// <summary>
+        /// Verifies that ReturnBook returns OK status with updated book when return succeeds.
+        /// </summary>
         [TestMethod]
         public async Task ReturnBook_WithValidBook_ShouldReturnOkWithUpdatedBook()
         {
             // Arrange
             var bookId = Guid.NewGuid();
             var updatedBook = TestDataBuilder.CreateTestBook(id: bookId, quantity: 6);
-            
+
             _bookServiceMock.Setup(s => s.ReturnBookAsync(bookId, "Jane Doe"))
                 .ReturnsAsync((CustomerBookOperationResult.Success, updatedBook));
 
@@ -240,6 +276,9 @@ namespace ELibrary.Tests.Controllers
             returnedBook!.ActualQuantity.Should().Be(6);
         }
 
+        /// <summary>
+        /// Verifies that ReturnBook returns NotFound when the book doesn't exist.
+        /// </summary>
         [TestMethod]
         public async Task ReturnBook_WithNonExistentBook_ShouldReturnNotFound()
         {
@@ -255,6 +294,9 @@ namespace ELibrary.Tests.Controllers
             result.Result.Should().BeOfType<NotFoundObjectResult>();
         }
 
+        /// <summary>
+        /// Verifies that ReturnBook returns Conflict when a concurrency conflict occurs.
+        /// </summary>
         [TestMethod]
         public async Task ReturnBook_WithConflict_ShouldReturnConflict()
         {
@@ -270,13 +312,16 @@ namespace ELibrary.Tests.Controllers
             result.Result.Should().BeOfType<ConflictObjectResult>();
         }
 
+        /// <summary>
+        /// Verifies that ReturnBook uses "anonym" as customer name when null is provided.
+        /// </summary>
         [TestMethod]
         public async Task ReturnBook_WithNullCustomerName_ShouldUseAnonymous()
         {
             // Arrange
             var bookId = Guid.NewGuid();
             var updatedBook = TestDataBuilder.CreateTestBook(id: bookId, quantity: 6);
-            
+
             _bookServiceMock.Setup(s => s.ReturnBookAsync(bookId, "anonym"))
                 .ReturnsAsync((CustomerBookOperationResult.Success, updatedBook));
 

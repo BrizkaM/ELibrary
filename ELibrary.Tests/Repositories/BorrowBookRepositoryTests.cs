@@ -1,14 +1,18 @@
 using ELibrary.Database.Repositories;
-using ELibrary.Shared.Entities;
 using ELibrary.Tests.Helpers;
 using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ELibrary.Tests.Repositories
 {
+    /// <summary>
+    /// Tests for BorrowBookRepository data access operations for managing borrow/return records.
+    /// </summary>
     [TestClass]
     public class BorrowBookRepositoryTests
     {
+        /// <summary>
+        /// Verifies that GetAllAsync returns all records ordered by date in descending order (newest first).
+        /// </summary>
         [TestMethod]
         public async Task GetAllAsync_ShouldReturnAllRecords_OrderedByDateDescending()
         {
@@ -37,6 +41,9 @@ namespace ELibrary.Tests.Repositories
             result.First().CustomerName.Should().Be("Customer 2");
         }
 
+        /// <summary>
+        /// Verifies that GetAllAsync returns an empty list when no records exist in the database.
+        /// </summary>
         [TestMethod]
         public async Task GetAllAsync_WithNoRecords_ShouldReturnEmptyList()
         {
@@ -52,6 +59,9 @@ namespace ELibrary.Tests.Repositories
             result.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that AddAsync successfully adds a new borrow/return record to the database.
+        /// </summary>
         [TestMethod]
         public async Task AddAsync_ShouldAddNewRecord()
         {
@@ -69,11 +79,14 @@ namespace ELibrary.Tests.Repositories
             result.Should().NotBeNull();
             result.ID.Should().Be(newRecord.ID);
             result.CustomerName.Should().Be("Test Customer");
-            
+
             var allRecords = await repository.GetAllAsync();
             allRecords.Should().Contain(r => r.ID == newRecord.ID);
         }
 
+        /// <summary>
+        /// Verifies that AddAsync creates a correct record when adding a "Borrowed" action.
+        /// </summary>
         [TestMethod]
         public async Task AddAsync_WithBorrowedAction_ShouldCreateCorrectRecord()
         {
@@ -94,6 +107,9 @@ namespace ELibrary.Tests.Repositories
             result.BookID.Should().Be(book.ID);
         }
 
+        /// <summary>
+        /// Verifies that AddAsync creates a correct record when adding a "Returned" action.
+        /// </summary>
         [TestMethod]
         public async Task AddAsync_WithReturnedAction_ShouldCreateCorrectRecord()
         {
@@ -113,6 +129,9 @@ namespace ELibrary.Tests.Repositories
             result.CustomerName.Should().Be("Jane Doe");
         }
 
+        /// <summary>
+        /// Verifies that the constructor throws ArgumentNullException when context is null.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithNullContext_ShouldThrowArgumentNullException()
         {

@@ -1,14 +1,18 @@
 using ELibrary.Database.Repositories;
-using ELibrary.Shared.Entities;
 using ELibrary.Tests.Helpers;
 using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ELibrary.Tests.Repositories
 {
+    /// <summary>
+    /// Tests for BookRepository data access operations including CRUD operations and filtering functionality.
+    /// </summary>
     [TestClass]
     public class BookRepositoryTests
     {
+        /// <summary>
+        /// Verifies that GetAllAsync returns all books ordered by author in descending alphabetical order.
+        /// </summary>
         [TestMethod]
         public async Task GetAllAsync_ShouldReturnAllBooks_OrderedByAuthorDescending()
         {
@@ -25,6 +29,9 @@ namespace ELibrary.Tests.Repositories
             result.Should().BeInDescendingOrder(b => b.Author);
         }
 
+        /// <summary>
+        /// Verifies that GetByIdAsync returns the correct book when a valid ID is provided.
+        /// </summary>
         [TestMethod]
         public async Task GetByIdAsync_WithValidId_ShouldReturnBook()
         {
@@ -41,6 +48,9 @@ namespace ELibrary.Tests.Repositories
             result.Name.Should().Be("Test Book 1");
         }
 
+        /// <summary>
+        /// Verifies that GetByIdAsync returns null when an invalid ID is provided.
+        /// </summary>
         [TestMethod]
         public async Task GetByIdAsync_WithInvalidId_ShouldReturnNull()
         {
@@ -56,6 +66,9 @@ namespace ELibrary.Tests.Repositories
             result.Should().BeNull();
         }
 
+        /// <summary>
+        /// Verifies that GetByISBNAsync returns the correct book when a valid ISBN is provided.
+        /// </summary>
         [TestMethod]
         public async Task GetByISBNAsync_WithValidISBN_ShouldReturnBook()
         {
@@ -72,6 +85,9 @@ namespace ELibrary.Tests.Repositories
             result.Name.Should().Be("Test Book 1");
         }
 
+        /// <summary>
+        /// Verifies that GetByISBNAsync returns null when an invalid ISBN is provided.
+        /// </summary>
         [TestMethod]
         public async Task GetByISBNAsync_WithInvalidISBN_ShouldReturnNull()
         {
@@ -86,6 +102,9 @@ namespace ELibrary.Tests.Repositories
             result.Should().BeNull();
         }
 
+        /// <summary>
+        /// Verifies that GetFilteredBooksAsync returns books matching the provided name filter.
+        /// </summary>
         [TestMethod]
         public async Task GetFilteredBooksAsync_ByName_ShouldReturnMatchingBooks()
         {
@@ -101,6 +120,9 @@ namespace ELibrary.Tests.Repositories
             result.First().Name.Should().Be("Test Book 1");
         }
 
+        /// <summary>
+        /// Verifies that GetFilteredBooksAsync returns books matching the provided author filter.
+        /// </summary>
         [TestMethod]
         public async Task GetFilteredBooksAsync_ByAuthor_ShouldReturnMatchingBooks()
         {
@@ -116,6 +138,9 @@ namespace ELibrary.Tests.Repositories
             result.First().Author.Should().Be("Test Author 2");
         }
 
+        /// <summary>
+        /// Verifies that GetFilteredBooksAsync returns books matching the provided ISBN filter.
+        /// </summary>
         [TestMethod]
         public async Task GetFilteredBooksAsync_ByISBN_ShouldReturnMatchingBooks()
         {
@@ -131,6 +156,9 @@ namespace ELibrary.Tests.Repositories
             result.First().ISBN.Should().Be("1234567890123");
         }
 
+        /// <summary>
+        /// Verifies that GetFilteredBooksAsync returns all books with names containing the partial name filter.
+        /// </summary>
         [TestMethod]
         public async Task GetFilteredBooksAsync_WithPartialName_ShouldReturnMatchingBooks()
         {
@@ -145,6 +173,9 @@ namespace ELibrary.Tests.Repositories
             result.Should().HaveCount(3);
         }
 
+        /// <summary>
+        /// Verifies that GetFilteredBooksAsync returns an empty list when no books match the filter criteria.
+        /// </summary>
         [TestMethod]
         public async Task GetFilteredBooksAsync_WithNoMatches_ShouldReturnEmptyList()
         {
@@ -159,6 +190,9 @@ namespace ELibrary.Tests.Repositories
             result.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that GetFilteredBooksAsync returns books matching all provided filter criteria (name, author, ISBN).
+        /// </summary>
         [TestMethod]
         public async Task GetFilteredBooksAsync_WithMultipleCriteria_ShouldReturnMatchingBooks()
         {
@@ -168,8 +202,8 @@ namespace ELibrary.Tests.Repositories
 
             // Act
             var result = await repository.GetFilteredBooksAsync(
-                name: "Test Book 1", 
-                author: "Test Author 1", 
+                name: "Test Book 1",
+                author: "Test Author 1",
                 isbn: "1234567890123");
 
             // Assert
@@ -180,6 +214,9 @@ namespace ELibrary.Tests.Repositories
             book.ISBN.Should().Be("1234567890123");
         }
 
+        /// <summary>
+        /// Verifies that AddAsync successfully adds a new book to the database.
+        /// </summary>
         [TestMethod]
         public async Task AddAsync_ShouldAddNewBook()
         {
@@ -195,12 +232,15 @@ namespace ELibrary.Tests.Repositories
             // Assert
             result.Should().NotBeNull();
             result.ID.Should().Be(newBook.ID);
-            
+
             var bookInDb = await repository.GetByIdAsync(newBook.ID);
             bookInDb.Should().NotBeNull();
             bookInDb!.Name.Should().Be(newBook.Name);
         }
 
+        /// <summary>
+        /// Verifies that Update successfully modifies an existing book in the database.
+        /// </summary>
         [TestMethod]
         public async Task Update_ShouldUpdateExistingBook()
         {
@@ -222,6 +262,9 @@ namespace ELibrary.Tests.Repositories
             updatedBook.Name.Should().NotBe(originalName);
         }
 
+        /// <summary>
+        /// Verifies that the constructor throws ArgumentNullException when context is null.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithNullContext_ShouldThrowArgumentNullException()
         {

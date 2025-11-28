@@ -4,14 +4,19 @@ using ELibrary.Tests.Helpers;
 using ELibrary.WebApp.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace ELibrary.Tests.Integration
 {
+    /// <summary>
+    /// Integration tests for complete book workflow including creation, borrowing, returning, and filtering operations.
+    /// </summary>
     [TestClass]
     public class BookWorkflowIntegrationTests
     {
+        /// <summary>
+        /// Verifies the complete book lifecycle from creation through borrowing and returning works correctly.
+        /// </summary>
         [TestMethod]
         public async Task CompleteBookLifecycle_CreateBorrowReturn_ShouldWorkCorrectly()
         {
@@ -56,6 +61,9 @@ namespace ELibrary.Tests.Integration
             records.Count(r => r.Action == "Returned").Should().Be(1);
         }
 
+        /// <summary>
+        /// Verifies that borrowing returns OutOfStock when all copies are borrowed and no more are available.
+        /// </summary>
         [TestMethod]
         public async Task BorrowAllCopies_ThenTryBorrowAgain_ShouldReturnOutOfStock()
         {
@@ -84,6 +92,9 @@ namespace ELibrary.Tests.Integration
             book!.ActualQuantity.Should().Be(0);
         }
 
+        /// <summary>
+        /// Verifies that multiple customers can borrow and return books simultaneously while maintaining data integrity.
+        /// </summary>
         [TestMethod]
         public async Task MultipleCustomers_BorrowAndReturnSimultaneously_ShouldMaintainDataIntegrity()
         {
@@ -115,6 +126,9 @@ namespace ELibrary.Tests.Integration
             records.Count(r => r.Action == "Returned").Should().Be(2);
         }
 
+        /// <summary>
+        /// Verifies that book filtering by author, name, and ISBN returns correct results after creating multiple books.
+        /// </summary>
         [TestMethod]
         public async Task FilterBooks_AfterCreatingMultiple_ShouldReturnCorrectResults()
         {
@@ -147,6 +161,9 @@ namespace ELibrary.Tests.Integration
             specificBook.First().Name.Should().Be("Fantasy Book 1");
         }
 
+        /// <summary>
+        /// Verifies that attempting to create a book with a duplicate ISBN throws an ArgumentException.
+        /// </summary>
         [TestMethod]
         public async Task CreateBookWithDuplicateISBN_ShouldThrowException()
         {
@@ -172,6 +189,9 @@ namespace ELibrary.Tests.Integration
                 .WithMessage("*Book with the same ISBN already exists*");
         }
 
+        /// <summary>
+        /// Verifies that borrow records are returned ordered by date in descending order (newest first).
+        /// </summary>
         [TestMethod]
         public async Task BorrowRecords_ShouldBeOrderedByDateDescending()
         {
@@ -199,6 +219,9 @@ namespace ELibrary.Tests.Integration
             records[0].Action.Should().Be("Returned"); // Most recent
         }
 
+        /// <summary>
+        /// Verifies that GetAllBooks returns books ordered by author in descending alphabetical order.
+        /// </summary>
         [TestMethod]
         public async Task GetAllBooks_ShouldBeOrderedByAuthorDescending()
         {
