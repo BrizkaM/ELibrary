@@ -44,6 +44,7 @@ namespace ELibrary.WebApp.Services
             if (existingISBN != null)
                 throw new ArgumentException("Book with the same ISBN already exists.", nameof(book.ISBN));
 
+            // Id automaticaly created by EF
             var addedBook = await _bookRepo.AddAsync(book);
             await _context.SaveChangesAsync();
 
