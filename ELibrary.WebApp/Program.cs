@@ -85,26 +85,18 @@ app.UseExceptionHandler(errorApp =>
 
         logger.LogError(exception, "Unhandled exception");
 
-        var result = new HttpResponseMessage
-        {
-            StatusCode = System.Net.HttpStatusCode.InternalServerError,        
-            Content = new StringContent(new
-            {
-                error = exception?.Message,
-                stackTrace = exception?.StackTrace
-            }.ToString() ?? string.Empty),        
-        };
-
         context.Response.StatusCode = exception switch
         {
             ArgumentException => StatusCodes.Status400BadRequest,
             KeyNotFoundException => StatusCodes.Status404NotFound,
-            // Add more exception types as needed
             _ => StatusCodes.Status500InternalServerError
         };
 
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsJsonAsync(result);
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = exception?.Message,
+            inner = exception?.InnerException?.Message
+        });
     });
 });
 
@@ -114,6 +106,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Logger.LogInformation("E-Library API is starting...");
+app.Logger.LogInformation("E-Library API started.");
 
 app.Run();

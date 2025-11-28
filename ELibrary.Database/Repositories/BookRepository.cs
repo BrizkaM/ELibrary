@@ -1,5 +1,4 @@
 ﻿using ELibrary.Shared.Entities;
-using ELibrary.Shared.Enums;
 using ELibrary.Shared.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +9,7 @@ namespace ELibrary.Database.Repositories
         private readonly ELibraryDbContext _context;
 
         /// <summary>
-        /// Initializes a new instance of the BookRepoository class
+        /// Initializes a new instance of the BookRepository class
         /// </summary>
         /// <param name="context">The database context</param>
         /// <exception cref="ArgumentNullException">Thrown when context is null</exception>
@@ -31,7 +30,7 @@ namespace ELibrary.Database.Repositories
         }
 
         /// <summary>
-        /// Get all books in database.
+        /// Get book by Id.
         /// </summary>
         /// <returns>Collection of all books.</returns>
         public async Task<Book?> GetByIdAsync(Guid id)
@@ -40,13 +39,23 @@ namespace ELibrary.Database.Repositories
         }
 
         /// <summary>
+        /// Get book by ISBN.
+        /// </summary>
+        /// <returns>Collection of all books.</returns>
+        public async Task<Book?> GetByISBNAsync(string isbn)
+        {
+            return await _context.Books
+                .FirstOrDefaultAsync(b => b.ISBN == isbn);
+        }
+
+        /// <summary>
         /// Gets filtered books from the database based on provided criteria.
         /// </summary>
         /// <param name="name">Name of the book.</param>
         /// <param name="author">Author of the book.</param>
-        /// <param name="ISBN">ISBN code of the book.</param>
+        /// <param name="isbn">ISBN code of the book.</param>
         /// <returns></returns>
-        public async Task<IEnumerable<Book>> GetFilteredBooksAsync(string? name, string? author, string? ISBN)
+        public async Task<IEnumerable<Book>> GetFilteredBooksAsync(string? name, string? author, string? isbn)
         {
             var query = _context.Books.AsQueryable();
 
@@ -60,9 +69,9 @@ namespace ELibrary.Database.Repositories
                 query = query.Where(b => b.Author.Contains(author.Trim()));
             }   
 
-            if(!string.IsNullOrEmpty(ISBN))
+            if(!string.IsNullOrEmpty(isbn))
             {
-                query = query.Where(b => b.ISBN.Contains(ISBN.Trim()));
+                query = query.Where(b => b.ISBN.Contains(isbn.Trim()));
             }
 
 

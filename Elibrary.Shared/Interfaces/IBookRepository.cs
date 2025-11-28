@@ -7,6 +7,8 @@ namespace ELibrary.Shared.Interfaces
 
         Task<Book?> GetByIdAsync(Guid id);
 
+        Task<Book?> GetByISBNAsync(string isbn);
+
         Task<IEnumerable<Book>> GetFilteredBooksAsync(string? name, string? author, string? isbn);
 
         Task<Book> AddAsync(Book book);

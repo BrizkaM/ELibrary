@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ELibrary.Database;
 
 /// <summary>
-/// Database context for E-Shop application
+/// Database context for ELibrary application
 /// </summary>
 public class ELibraryDbContext : DbContext
 {
@@ -48,6 +48,7 @@ public class ELibraryDbContext : DbContext
                 .HasMaxLength(1000);
 
             entity.Property(e => e.ISBN)
+                .IsRequired()
                 .HasMaxLength(1000);
 
             entity.Property(e => e.Year)
@@ -60,6 +61,10 @@ public class ELibraryDbContext : DbContext
                 .IsConcurrencyToken()
                 .ValueGeneratedOnUpdate()
                 .HasDefaultValue(0L);
+
+            entity.HasIndex(e => e.ISBN)
+                .IsUnique()
+                .HasDatabaseName("IX_Book_ISBN");
         });
 
         // Configure borrow book record entity

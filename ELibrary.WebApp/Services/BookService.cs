@@ -23,23 +23,22 @@ namespace ELibrary.WebApp.Services
 
         public async Task<Book> CreateBookAsync(Book book)
         {
-            try
-            {
-                book.ID = Guid.NewGuid();
-                book.RowVersion = 0;
+            if(book.ActualQuantity < 0)
+                throw new ArgumentException("Actual quantity cannot be negative.", nameof(book.ActualQuantity));
 
-                var addedBook = await _bookRepo.AddAsync(book);
-                await _context.SaveChangesAsync();
+            if (book.Year > DateTime.UtcNow)
+                throw new ArgumentException("Year cannot be in the future.", nameof(book.Year));
 
-                _logger.LogInformation("Book created successfully with ID: {BookId}", addedBook.ID);
+            var existingISBN = await _bookRepo.GetByISBNAsync(book.ISBN);
+            if (existingISBN != null)
+                throw new ArgumentException("Book with the same ISBN already exists.", nameof(book.ISBN));
 
-                return addedBook;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error while creating book");
-                throw;
-            }
+            var addedBook = await _bookRepo.AddAsync(book);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Book created successfully with ID: {BookId}", addedBook.ID);
+
+            return addedBook;
         }
 
         public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> BorrowBookAsync(Guid bookId, string customerName)
@@ -51,11 +50,13 @@ namespace ELibrary.WebApp.Services
 
                 if (book == null)
                 {
+                    await transaction.RollbackAsync();
                     return (CustomerBookOperationResult.NotFound, null);
                 }
 
                 if (book.ActualQuantity <= 0)
                 {
+                    await transaction.RollbackAsync();
                     return (CustomerBookOperationResult.OutOfStock, null);
                 }
 
@@ -67,7 +68,7 @@ namespace ELibrary.WebApp.Services
                     BookID = bookId,
                     Book = book,
                     CustomerName = customerName,
-                    Action = "Borrowed",
+                    Action = BookActionType.Borrowed.ToString(),
                     Date = DateTime.UtcNow
                 };
 
@@ -79,10 +80,12 @@ namespace ELibrary.WebApp.Services
             }
             catch (DbUpdateConcurrencyException)
             {
-                return (CustomerBookOperationResult.Conflict, null); ;
+                await transaction.RollbackAsync();
+                return (CustomerBookOperationResult.Conflict, null);
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 _logger.LogError(ex,
                     "Unexpected error while borrowing book {BookId} for customer {CustomerName}",
                     bookId, customerName);
@@ -99,6 +102,7 @@ namespace ELibrary.WebApp.Services
 
                 if (book == null)
                 {
+                    await transaction.RollbackAsync();
                     return (CustomerBookOperationResult.NotFound, null);
                 }
 
@@ -110,7 +114,7 @@ namespace ELibrary.WebApp.Services
                     BookID = bookId,
                     Book = book,
                     CustomerName = customerName,
-                    Action = "Returned",
+                    Action = BookActionType.Returned.ToString(),
                     Date = DateTime.UtcNow
                 };
 
@@ -122,10 +126,12 @@ namespace ELibrary.WebApp.Services
             }
             catch (DbUpdateConcurrencyException)
             {
-                return (CustomerBookOperationResult.Conflict, null); ;
+                await transaction.RollbackAsync();
+                return (CustomerBookOperationResult.Conflict, null);
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 _logger.LogError(ex,
                     "Unexpected error while returning book {BookId} from customer {CustomerName}",
                     bookId, customerName);
