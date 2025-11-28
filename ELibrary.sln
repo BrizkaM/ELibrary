@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ELibrary.Shared", "Elibrary
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ELibrary.BlazorClient", "ELibrary.BlazorClient\ELibrary.BlazorClient.csproj", "{0D348BE1-7026-AE3F-8FEA-07BE40E7A08A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ELibrary.Tests", "ELibrary.Tests\ELibrary.Tests.csproj", "{97C11DA4-38F5-40D6-B0A6-CFE1CF6783A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{0D348BE1-7026-AE3F-8FEA-07BE40E7A08A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D348BE1-7026-AE3F-8FEA-07BE40E7A08A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D348BE1-7026-AE3F-8FEA-07BE40E7A08A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97C11DA4-38F5-40D6-B0A6-CFE1CF6783A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97C11DA4-38F5-40D6-B0A6-CFE1CF6783A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97C11DA4-38F5-40D6-B0A6-CFE1CF6783A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97C11DA4-38F5-40D6-B0A6-CFE1CF6783A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

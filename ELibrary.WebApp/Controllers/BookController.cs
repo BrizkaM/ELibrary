@@ -87,7 +87,7 @@ namespace ELibrary.WebApp.Controllers
             return EvaluateCustomerOperation(bookId, updatedBook);
         }
 
-        internal ActionResult<BookDto> EvaluateCustomerOperation(Guid bookId, (Shared.Enums.CustomerBookOperationResult OperationResult, Book? UpdatedBook) updatedBook)
+        public ActionResult<BookDto> EvaluateCustomerOperation(Guid bookId, (Shared.Enums.CustomerBookOperationResult OperationResult, Book? UpdatedBook) updatedBook)
         {
             if (updatedBook.OperationResult == Shared.Enums.CustomerBookOperationResult.NotFound)
             {
