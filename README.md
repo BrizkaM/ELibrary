@@ -23,7 +23,7 @@ The solution consists of five main projects:
 ### ELibrary.BlazorClient - Completely AI generated (Claude by Anthropic, Sonnet 4.5), not reviewed
 ### ELibrary.Tests - Completely AI generated (Claude by Anthropic, Sonnet 4.5), briefly reviewed
 
-+ README.md file (collab AI and 'manual' work)
+README.md file (collab AI and 'manual' work)
 
 ## AI usage
 - Mostly used Claude (Anthropic, Sonnet 4.5), to create Client side and generate tests
@@ -91,7 +91,7 @@ The application uses SQLite with the following tables:
 ### Borrow Records
 - `GET /BorrowBookRecord` - Get all borrow/return records
 
-## Setup and Running
+## Prerequisites and Setup
 
 1. **Prerequisites**
    - .NET 8.0 SDK
@@ -102,25 +102,12 @@ The application uses SQLite with the following tables:
    # The database is automatically created and migrated on application startup
    # Initial seed data includes 3 books by Christopher Ruocchio
    ```
-
-3. **Run the Application**
-   ```bash
-   cd ELibrary.WebApp
-   dotnet run
-   ```
-
-4. **Access Swagger UI**
-   - Navigate to `https://localhost:7XXX/swagger` (port may vary)
-   - Use Swagger UI to test all API endpoints
-
 ## Seed Data
 
 The application includes initial seed data:
 - Empire of Silence (2018) - 3 copies
 - Howling Dark (2019) - 3 copies
 - Demon in white (2020) - 3 copies
-
-All books are by Christopher Ruocchio.
 
 ## Technical Highlights
 
