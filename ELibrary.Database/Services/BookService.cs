@@ -1,10 +1,10 @@
-﻿using ELibrary.Database;
-using ELibrary.Shared.Entities;
+﻿using ELibrary.Shared.Entities;
 using ELibrary.Shared.Enums;
 using ELibrary.Shared.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
-namespace ELibrary.WebApp.Services
+namespace ELibrary.Database.Services
 {
     /// <summary>
     /// Book service implementation.
