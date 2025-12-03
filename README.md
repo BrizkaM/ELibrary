@@ -30,6 +30,7 @@ README.md file (collab AI and 'manual' work)
 
 ## Architecture
 - Unit of work pattern ommited due to scale and scope of the project
+- WebApp project references Database project directly- due to scale and scope (This would not be clean in bigger architecture scopes)
 - RowVersion check handled by trigger (due to SQLite)- this would be different for e.g. MSSQL
 
 ## Features
