@@ -5,13 +5,12 @@ A simple library management system built with ASP.NET Core Web API and Entity Fr
 ## Project
 ### Brief summary
 - IDE used to create project was Visual Studio 2022 (VS2022)
-- VS2022 can be used to run all unit tests
-- VS2022 can be used to run project itself: press **Start** or **F5** to run project
-- Multiple startup projects are set to Run
-- Client runs on port `https://localhost:7002/`
-- Client runs on port `https://localhost:7001/`
-- Swagger can be found on port `https://localhost:7001/swagger`
-- Database is created and all migration applied during the start of the project 
+   - VS2022 can be used to run all unit tests
+   - VS2022 can be used to run project itself: press **Start** or **F5** to run project
+   - Multiple startup projects are set to Run
+   - Client runs on port `https://localhost:7002/`
+   - Swagger can be found on `https://localhost:7001/swagger`
+   - Database is created and all migration applied during the start of the project 
 
 ## Project Structure
 
