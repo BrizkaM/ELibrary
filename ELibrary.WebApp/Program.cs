@@ -24,6 +24,11 @@ builder.Services.AddDbContext<ELibraryDbContext>(options =>
 // Repository
 builder.Services.AddScoped<IBookRepository, BookRepository>();
 builder.Services.AddScoped<IBorrowBookRecordRepository, BorrowBookRepository>();
+
+// Unit of Work registration
+// Unit of Work coordinates multiple repositories and manages transactions
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 builder.Services.AddScoped<IBookService, BookService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

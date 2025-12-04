@@ -1,4 +1,5 @@
-﻿using ELibrary.Shared.Entities;
+﻿using ELibrary.Database.Repositories;
+using ELibrary.Shared.Entities;
 using ELibrary.Shared.Enums;
 using ELibrary.Shared.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,8 @@ namespace ELibrary.Database.Services
     /// </summary>
     public class BookService : IBookService
     {
-        private readonly IBookRepository _bookRepo;
-        private readonly IBorrowBookRecordRepository _borrowBookRepo;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<BookService> _logger;
-        private readonly ELibraryDbContext _context;
 
         /// <summary>
         /// Creates a new instance of the BookService class.
@@ -23,12 +22,10 @@ namespace ELibrary.Database.Services
         /// <param name="borrowBookRepo">Borrow book repository.</param>
         /// <param name="logger">The logger.</param>
         /// <param name="context">DB context.</param>
-        public BookService(IBookRepository bookRepo, IBorrowBookRecordRepository borrowBookRepo, ILogger<BookService> logger, ELibraryDbContext context)
+        public BookService(IUnitOfWork unitOfWork, ILogger<BookService> logger)
         {
-            _bookRepo = bookRepo;
-            _borrowBookRepo = borrowBookRepo;
-            _logger = logger;
-            _context = context;
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <inheritdoc/>
@@ -40,15 +37,17 @@ namespace ELibrary.Database.Services
             if (book.Year > DateTime.UtcNow)
                 throw new ArgumentException("Year cannot be in the future.", nameof(book.Year));
 
-            var existingISBN = await _bookRepo.GetByISBNAsync(book.ISBN);
+            var existingISBN = await _unitOfWork.Books.GetByISBNAsync(book.ISBN);
             if (existingISBN != null)
                 throw new ArgumentException("Book with the same ISBN already exists.", nameof(book.ISBN));
 
             // Id automaticaly created by EF
-            var addedBook = await _bookRepo.AddAsync(book);
-            await _context.SaveChangesAsync();
+            var addedBook = await _unitOfWork.Books.AddAsync(book);
+            await _unitOfWork.SaveChangesAsync();
 
-            _logger.LogInformation("Book created successfully with ID: {BookId}", addedBook.ID);
+            _logger.LogInformation(
+                "Book created successfully. BookId: {BookId}, Title: {Title}, Author: {Author}, ISBN: {ISBN}, Quantity: {Quantity}",
+                addedBook.ID, addedBook.Name, addedBook.Author, addedBook.ISBN, addedBook.ActualQuantity);
 
             return addedBook;
         }
@@ -56,25 +55,27 @@ namespace ELibrary.Database.Services
         /// <inheritdoc/>
         public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> BorrowBookAsync(Guid bookId, string customerName)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var book = await _bookRepo.GetByIdAsync(bookId);
+                var book = await _unitOfWork.Books.GetByIdAsync(bookId);
 
                 if (book == null)
                 {
-                    await transaction.RollbackAsync();
+                    await _unitOfWork.RollbackTransactionAsync();
+                    _logger.LogWarning("Book not found. BookId: {BookId}", bookId);
                     return (CustomerBookOperationResult.NotFound, null);
                 }
 
                 if (book.ActualQuantity <= 0)
                 {
-                    await transaction.RollbackAsync();
+                    await _unitOfWork.RollbackTransactionAsync();
+                    _logger.LogWarning("Book out of stock. BookId: {BookId}, Title: {Title}", bookId, book.Name);
                     return (CustomerBookOperationResult.OutOfStock, null);
                 }
 
                 book.ActualQuantity -= 1;
-                _bookRepo.Update(book);
+                _unitOfWork.Books.Update(book);
 
                 var bookRecord = new BorrowBookRecord
                 {
@@ -85,20 +86,29 @@ namespace ELibrary.Database.Services
                     Date = DateTime.UtcNow
                 };
 
-                _ = await _borrowBookRepo.AddAsync(bookRecord);
+                await _unitOfWork.BorrowRecords.AddAsync(bookRecord);
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                _logger.LogInformation(
+                    "Book borrowed successfully. BookId: {BookId}, Title: {Title}, Customer: {CustomerName}, RemainingQuantity: {Quantity}, Timestamp: {Timestamp}",
+                    bookId, book.Name, customerName, book.ActualQuantity, DateTime.UtcNow);
+
+                // Save changes and commit transaction
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
                 return (CustomerBookOperationResult.Success, book);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
-                await transaction.RollbackAsync();
+                await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogWarning(ex,
+                    "Concurrency conflict while borrowing book. BookId: {BookId}, Customer: {CustomerName}",
+                    bookId, customerName);
                 return (CustomerBookOperationResult.Conflict, null);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogError(ex,
                     "Unexpected error while borrowing book {BookId} for customer {CustomerName}",
                     bookId, customerName);
@@ -109,20 +119,24 @@ namespace ELibrary.Database.Services
         /// <inheritdoc/>
         public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> ReturnBookAsync(Guid bookId, string customerName)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var book = await _bookRepo.GetByIdAsync(bookId);
+                // Get book
+                var book = await _unitOfWork.Books.GetByIdAsync(bookId);
 
                 if (book == null)
                 {
-                    await transaction.RollbackAsync();
+                    await _unitOfWork.RollbackTransactionAsync();
+                    _logger.LogWarning("Book not found. BookId: {BookId}", bookId);
                     return (CustomerBookOperationResult.NotFound, null);
                 }
 
+                // Update book quantity
                 book.ActualQuantity += 1;
-                _bookRepo.Update(book);
+                _unitOfWork.Books.Update(book);
 
+                // Create return record
                 var bookRecord = new BorrowBookRecord
                 {
                     BookID = bookId,
@@ -132,22 +146,31 @@ namespace ELibrary.Database.Services
                     Date = DateTime.UtcNow
                 };
 
-                _ = await _borrowBookRepo.AddAsync(bookRecord);
+                await _unitOfWork.BorrowRecords.AddAsync(bookRecord);
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                // Save changes and commit transaction
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                _logger.LogInformation(
+                    "Book returned successfully. BookId: {BookId}, Title: {Title}, Customer: {CustomerName}, NewQuantity: {Quantity}, Timestamp: {Timestamp}",
+                    bookId, book.Name, customerName, book.ActualQuantity, DateTime.UtcNow);
+
                 return (CustomerBookOperationResult.Success, book);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
-                await transaction.RollbackAsync();
+                await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogWarning(ex,
+                    "Concurrency conflict while returning book. BookId: {BookId}, Customer: {CustomerName}",
+                    bookId, customerName);
                 return (CustomerBookOperationResult.Conflict, null);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogError(ex,
-                    "Unexpected error while returning book {BookId} from customer {CustomerName}",
+                    "Unexpected error while returning book. BookId: {BookId}, Customer: {CustomerName}",
                     bookId, customerName);
                 throw;
             }

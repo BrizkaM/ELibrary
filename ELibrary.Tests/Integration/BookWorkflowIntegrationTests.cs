@@ -1,7 +1,8 @@
 using ELibrary.Database.Repositories;
-using ELibrary.Shared.Enums;
-using ELibrary.Tests.Helpers;
 using ELibrary.Database.Services;
+using ELibrary.Shared.Enums;
+using ELibrary.Shared.Interfaces;
+using ELibrary.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -25,7 +26,8 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
             // Create a new book
             var newBook = TestDataBuilder.CreateTestBook(
@@ -72,7 +74,8 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
             var newBook = TestDataBuilder.CreateTestBook(quantity: 2);
             var createdBook = await service.CreateBookAsync(newBook);
@@ -103,7 +106,8 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
             var newBook = TestDataBuilder.CreateTestBook(quantity: 10);
             var createdBook = await service.CreateBookAsync(newBook);
@@ -137,7 +141,8 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
             // Create multiple books
             await service.CreateBookAsync(TestDataBuilder.CreateTestBook(
@@ -172,7 +177,8 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
             var book1 = TestDataBuilder.CreateTestBook(isbn: "DUPLICATE123");
             await service.CreateBookAsync(book1);
@@ -200,7 +206,8 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
             var book = TestDataBuilder.CreateTestBook(quantity: 5);
             var createdBook = await service.CreateBookAsync(book);
@@ -230,7 +237,8 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
             // Create books with different authors
             await service.CreateBookAsync(TestDataBuilder.CreateTestBook(
