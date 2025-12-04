@@ -25,10 +25,10 @@ namespace ELibrary.Database.Services
         /// <param name="context">DB context.</param>
         public BookService(IBookRepository bookRepo, IBorrowBookRecordRepository borrowBookRepo, ILogger<BookService> logger, ELibraryDbContext context)
         {
-            _bookRepo = bookRepo;
-            _borrowBookRepo = borrowBookRepo;
-            _logger = logger;
-            _context = context;
+            _bookRepo = bookRepo ?? throw new ArgumentNullException(nameof(bookRepo));
+            _borrowBookRepo = borrowBookRepo ?? throw new ArgumentNullException(nameof(borrowBookRepo));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         /// <inheritdoc/>

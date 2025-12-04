@@ -1,3 +1,4 @@
+using ELibrary.Database.Repositories;
 using ELibrary.Shared.DTOs;
 using ELibrary.Shared.Entities;
 using ELibrary.Shared.Interfaces;
@@ -21,7 +22,7 @@ namespace ELibrary.WebApp.Controllers
         /// <param name="borrowBookRecordRepository">The borrow book record repository.</param>
         public BorrowBookRecordController(IBorrowBookRecordRepository borrowBookRecordRepository)
         {
-            _borrowBookRecordRepository = borrowBookRecordRepository;
+            _borrowBookRecordRepository = borrowBookRecordRepository ?? throw new ArgumentNullException(nameof(borrowBookRecordRepository));
         }
 
         /// <summary>

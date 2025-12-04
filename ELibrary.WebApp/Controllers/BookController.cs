@@ -25,9 +25,9 @@ namespace ELibrary.WebApp.Controllers
         /// <param name="logger">The logger.</param>
         public BookController(IBookRepository bookRepository, IBookService bookService, ILogger<BookController> logger)
         {
-            _bookRepository = bookRepository;
-            _bookService = bookService;
-            _logger = logger;
+            _bookRepository = bookRepository ?? throw new ArgumentNullException(nameof(bookRepository));
+            _bookService = bookService ?? throw new ArgumentNullException(nameof(bookService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
