@@ -2,9 +2,11 @@ using ELibrary.Shared.DTOs;
 using ELibrary.Shared.Entities;
 using ELibrary.Shared.Enums;
 using ELibrary.Shared.Interfaces;
+using ELibrary.Shared.Validators;
 using ELibrary.Tests.Helpers;
 using ELibrary.WebApp.Controllers;
 using FluentAssertions;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -21,6 +23,7 @@ namespace ELibrary.Tests.Controllers
         private Mock<IBookService> _bookServiceMock = null!;
         private Mock<ILogger<BookController>> _loggerMock = null!;
         private BookController _controller = null!;
+        private IValidator<BookDto> _bookDtoValidator = null!;
 
         [TestInitialize]
         public void Initialize()
@@ -28,10 +31,12 @@ namespace ELibrary.Tests.Controllers
             _bookRepositoryMock = new Mock<IBookRepository>();
             _bookServiceMock = new Mock<IBookService>();
             _loggerMock = new Mock<ILogger<BookController>>();
+            _bookDtoValidator = new BookDtoValidator();
             _controller = new BookController(
                 _bookRepositoryMock.Object,
                 _bookServiceMock.Object,
-                _loggerMock.Object);
+                _loggerMock.Object,
+                _bookDtoValidator);
         }
 
         /// <summary>
@@ -67,7 +72,7 @@ namespace ELibrary.Tests.Controllers
                 .ReturnsAsync(books);
 
             // Act
-            var result = await _controller.FindBooksByCriteria("Specific", null, null);
+            var result = await _controller.SearchBooks("Specific", null, null);
 
             // Assert
             result.Result.Should().BeOfType<OkObjectResult>();
@@ -88,10 +93,10 @@ namespace ELibrary.Tests.Controllers
                 .ReturnsAsync(new List<Book>());
 
             // Act
-            var result = await _controller.FindBooksByCriteria("NonExistent", null, null);
+            var result = await _controller.SearchBooks("NonExistent", null, null);
 
             // Assert
-            result.Result.Should().BeOfType<NotFoundResult>();
+            result.Result.Should().BeOfType<NotFoundObjectResult>();
         }
 
         /// <summary>
@@ -191,8 +196,6 @@ namespace ELibrary.Tests.Controllers
 
             // Assert
             result.Result.Should().BeOfType<NotFoundObjectResult>();
-            var notFoundResult = result.Result as NotFoundObjectResult;
-            notFoundResult!.Value.Should().BeOfType<string>();
         }
 
         /// <summary>

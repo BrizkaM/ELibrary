@@ -9,7 +9,7 @@ namespace ELibrary.WebApp.Controllers
     /// Implements API endpoints for managing borrow book records.
     /// </summary>
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/v1/[controller]")]
     [Produces("application/json")]
     public class BorrowBookRecordController : ControllerBase
     {

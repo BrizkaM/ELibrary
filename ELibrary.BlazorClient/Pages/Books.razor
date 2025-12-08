@@ -345,7 +345,7 @@
         
         try
         {
-            books = await BookApi.FindBooksByCriteriaAsync(searchName, searchAuthor, searchIsbn);
+            books = await BookApi.SearchBooksAsync(searchName, searchAuthor, searchIsbn);
         }
         catch (Exception ex)
         {
