@@ -1,11 +1,12 @@
-﻿using ELibrary.Database.Repositories;
+﻿using ELibrary.Services.Interfaces;
+using ELibrary.Shared.DTOs;
 using ELibrary.Shared.Entities;
 using ELibrary.Shared.Enums;
 using ELibrary.Shared.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace ELibrary.Database.Services
+namespace ELibrary.Services.Services
 {
     /// <summary>
     /// Book service implementation.
@@ -29,7 +30,21 @@ namespace ELibrary.Database.Services
         }
 
         /// <inheritdoc/>
-        public async Task<Book> CreateBookAsync(Book book)
+        public async Task<IEnumerable<BookDto>> GetAllBooksAsync()
+        {
+            var entities = await _unitOfWork.Books.GetAllAsync();
+            return entities.Select(MapToDto);
+        }
+
+        /// <inheritdoc/>
+        public async Task<IEnumerable<BookDto>> SearchBooksAsync(string? name,string? author,string? isbn)
+        {
+            var entities = await _unitOfWork.Books.GetFilteredBooksAsync(name, author, isbn);
+            return entities.Select(MapToDto);
+        }
+
+        /// <inheritdoc/>
+        public async Task<BookDto> CreateBookAsync(BookDto book)
         {
             if(book.ActualQuantity < 0)
                 throw new ArgumentException("Actual quantity cannot be negative.", nameof(book.ActualQuantity));
@@ -42,18 +57,18 @@ namespace ELibrary.Database.Services
                 throw new ArgumentException("Book with the same ISBN already exists.", nameof(book.ISBN));
 
             // Id automaticaly created by EF
-            var addedBook = await _unitOfWork.Books.AddAsync(book);
+            var addedBook = await _unitOfWork.Books.AddAsync(MapFromDto(book));
             await _unitOfWork.SaveChangesAsync();
 
             _logger.LogInformation(
                 "Book created successfully. BookId: {BookId}, Title: {Title}, Author: {Author}, ISBN: {ISBN}, Quantity: {Quantity}",
                 addedBook.ID, addedBook.Name, addedBook.Author, addedBook.ISBN, addedBook.ActualQuantity);
 
-            return addedBook;
+            return MapToDto(addedBook);
         }
 
         /// <inheritdoc/>
-        public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> BorrowBookAsync(Guid bookId, string customerName)
+        public async Task<(CustomerBookOperationResult OperationResult, BookDto? UpdatedBook)> BorrowBookAsync(Guid bookId, string customerName)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -96,7 +111,7 @@ namespace ELibrary.Database.Services
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-                return (CustomerBookOperationResult.Success, book);
+                return (CustomerBookOperationResult.Success, MapToDto(book));
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -117,7 +132,7 @@ namespace ELibrary.Database.Services
         }
 
         /// <inheritdoc/>
-        public async Task<(CustomerBookOperationResult OperationResult, Book? UpdatedBook)> ReturnBookAsync(Guid bookId, string customerName)
+        public async Task<(CustomerBookOperationResult OperationResult, BookDto? UpdatedBook)> ReturnBookAsync(Guid bookId, string customerName)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -156,7 +171,7 @@ namespace ELibrary.Database.Services
                     "Book returned successfully. BookId: {BookId}, Title: {Title}, Customer: {CustomerName}, NewQuantity: {Quantity}, Timestamp: {Timestamp}",
                     bookId, book.Name, customerName, book.ActualQuantity, DateTime.UtcNow);
 
-                return (CustomerBookOperationResult.Success, book);
+                return (CustomerBookOperationResult.Success, MapToDto(book));
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -174,6 +189,38 @@ namespace ELibrary.Database.Services
                     bookId, customerName);
                 throw;
             }
+        }
+
+
+        /// <summary>
+        /// Maps Book entity to BookDto
+        /// </summary>
+        private BookDto MapToDto(Book book)
+        {
+            return new BookDto
+            {
+                ID = book.ID,
+                Name = book.Name,
+                Author = book.Author,
+                Year = book.Year,
+                ISBN = book.ISBN,
+                ActualQuantity = book.ActualQuantity
+            };
+        }
+
+        /// <summary>
+        /// Maps BookDto to Book entity
+        /// </summary>
+        private Book MapFromDto(BookDto bookDto)
+        {
+            return new Book
+            {
+                Name = bookDto.Name,
+                Author = bookDto.Author,
+                Year = bookDto.Year,
+                ISBN = bookDto.ISBN,
+                ActualQuantity = bookDto.ActualQuantity
+            };
         }
     }
 }

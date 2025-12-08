@@ -1,6 +1,7 @@
 using ELibrary.Database;
 using ELibrary.Database.Repositories;
-using ELibrary.Database.Services;
+using ELibrary.Services.Interfaces;
+using ELibrary.Services.Services;
 using ELibrary.Shared.Interfaces;
 using ELibrary.Shared.Validators;
 using FluentValidation;

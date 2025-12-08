@@ -1,7 +1,6 @@
 using ELibrary.Database.Repositories;
-using ELibrary.Database.Services;
+using ELibrary.Services.Services;
 using ELibrary.Shared.Enums;
-using ELibrary.Shared.Interfaces;
 using ELibrary.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -36,7 +35,7 @@ namespace ELibrary.Tests.Services
             var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
             var service = new BookService(unitOfWork, _loggerMock.Object);
 
-            var newBook = TestDataBuilder.CreateTestBook(
+            var newBook = TestDataBuilder.CreateTestBookDto(
                 name: "New Book",
                 author: "New Author",
                 isbn: "9876543210123",
@@ -68,7 +67,7 @@ namespace ELibrary.Tests.Services
             var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
             var service = new BookService(unitOfWork, _loggerMock.Object);
 
-            var newBook = TestDataBuilder.CreateTestBook(quantity: -1);
+            var newBook = TestDataBuilder.CreateTestBookDto(quantity: -1);
 
             // Act
             Func<Task> act = async () => await service.CreateBookAsync(newBook);
@@ -92,7 +91,7 @@ namespace ELibrary.Tests.Services
             var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
             var service = new BookService(unitOfWork, _loggerMock.Object);
 
-            var newBook = TestDataBuilder.CreateTestBook();
+            var newBook = TestDataBuilder.CreateTestBookDto();
             newBook.Year = DateTime.UtcNow.AddYears(1);
 
             // Act
@@ -117,7 +116,7 @@ namespace ELibrary.Tests.Services
             var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
             var service = new BookService(unitOfWork, _loggerMock.Object);
 
-            var newBook = TestDataBuilder.CreateTestBook(isbn: "1234567890123"); // Duplicate ISBN
+            var newBook = TestDataBuilder.CreateTestBookDto(isbn: "1234567890123"); // Duplicate ISBN
 
             // Act
             Func<Task> act = async () => await service.CreateBookAsync(newBook);

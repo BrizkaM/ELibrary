@@ -1,7 +1,5 @@
+using ELibrary.Services.Interfaces;
 using ELibrary.Shared.DTOs;
-using ELibrary.Shared.Entities;
-using ELibrary.Shared.Interfaces;
-using ELibrary.Shared.Validators;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,18 +13,15 @@ namespace ELibrary.WebApp.Controllers
     [Produces("application/json")]
     public class BookController : ControllerBase
     {
-        private readonly IBookRepository _bookRepository;
         private readonly IBookService _bookService;
         private readonly ILogger<BookController> _logger;
         private readonly IValidator<BookDto> _bookValidator;
 
         public BookController(
-            IBookRepository bookRepository,
             IBookService bookService,
             ILogger<BookController> logger,
             IValidator<BookDto> bookValidator)
         {
-            _bookRepository = bookRepository;
             _bookService = bookService;
             _logger = logger;
             _bookValidator = bookValidator;
@@ -43,7 +38,7 @@ namespace ELibrary.WebApp.Controllers
         {
             _logger.LogInformation("Retrieving all books from library");
 
-            var books = (await _bookRepository.GetAllAsync()).Select(MapToDto);
+            var books = await _bookService.GetAllBooksAsync();
 
             _logger.LogInformation("Retrieved {Count} books", books.Count());
 
@@ -86,8 +81,7 @@ namespace ELibrary.WebApp.Controllers
                 "Searching books with criteria: Name={Name}, Author={Author}, ISBN={ISBN}",
                 name ?? "null", author ?? "null", isbn ?? "null");
 
-            var books = (await _bookRepository.GetFilteredBooksAsync(name, author, isbn))
-                .Select(MapToDto)
+            var books = (await _bookService.SearchBooksAsync(name, author, isbn))
                 .ToList();
 
             if (!books.Any())
@@ -144,7 +138,7 @@ namespace ELibrary.WebApp.Controllers
                     "Creating new book: {Name} by {Author} (ISBN: {ISBN})",
                     bookDto.Name, bookDto.Author, bookDto.ISBN);
 
-                var createdBook = await _bookService.CreateBookAsync(MapFromDto(bookDto));
+                var createdBook = await _bookService.CreateBookAsync(bookDto);
 
                 _logger.LogInformation(
                     "Book created successfully with ID: {BookId}",
@@ -153,7 +147,7 @@ namespace ELibrary.WebApp.Controllers
                 return CreatedAtAction(
                     nameof(GetAllBooks),
                     new { id = createdBook.ID },
-                    MapToDto(createdBook));
+                    createdBook);
             }
             catch (ArgumentException ex) when (ex.Message.Contains("ISBN"))
             {
@@ -257,7 +251,7 @@ namespace ELibrary.WebApp.Controllers
         /// </summary>
         private ActionResult<BookDto> EvaluateCustomerOperation(
             Guid bookId,
-            (Shared.Enums.CustomerBookOperationResult OperationResult, Book? UpdatedBook) result,
+            (Shared.Enums.CustomerBookOperationResult OperationResult, BookDto? UpdatedBook) result,
             string operationType)
         {
             switch (result.OperationResult)
@@ -309,7 +303,7 @@ namespace ELibrary.WebApp.Controllers
                         "Book {OperationType} successful. BookId: {BookId}, RemainingQuantity: {Quantity}",
                         operationType, bookId, result.UpdatedBook.ActualQuantity);
 
-                    return Ok(MapToDto(result.UpdatedBook));
+                    return Ok(result.UpdatedBook);
 
                 default:
                     _logger.LogError(
@@ -321,37 +315,6 @@ namespace ELibrary.WebApp.Controllers
                         message = "An unexpected error occurred"
                     });
             }
-        }
-
-        /// <summary>
-        /// Maps Book entity to BookDto
-        /// </summary>
-        private BookDto MapToDto(Book book)
-        {
-            return new BookDto
-            {
-                ID = book.ID,
-                Name = book.Name,
-                Author = book.Author,
-                Year = book.Year,
-                ISBN = book.ISBN,
-                ActualQuantity = book.ActualQuantity
-            };
-        }
-
-        /// <summary>
-        /// Maps BookDto to Book entity
-        /// </summary>
-        private Book MapFromDto(BookDto bookDto)
-        {
-            return new Book
-            {
-                Name = bookDto.Name,
-                Author = bookDto.Author,
-                Year = bookDto.Year,
-                ISBN = bookDto.ISBN,
-                ActualQuantity = bookDto.ActualQuantity
-            };
         }
     }
 }

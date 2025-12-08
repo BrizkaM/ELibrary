@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ELibrary.Database\ELibrary.Database.csproj" />
+    <ProjectReference Include="..\ELibrary.Services\ELibrary.Services.csproj" />
   </ItemGroup>
 
 </Project>

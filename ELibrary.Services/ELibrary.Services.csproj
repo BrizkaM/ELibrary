@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ELibrary.Database\ELibrary.Database.csproj" />
+    <ProjectReference Include="..\Elibrary.Shared\ELibrary.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

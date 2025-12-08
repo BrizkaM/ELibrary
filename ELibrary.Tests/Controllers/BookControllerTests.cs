@@ -1,7 +1,6 @@
+using ELibrary.Services.Interfaces;
 using ELibrary.Shared.DTOs;
-using ELibrary.Shared.Entities;
 using ELibrary.Shared.Enums;
-using ELibrary.Shared.Interfaces;
 using ELibrary.Shared.Validators;
 using ELibrary.Tests.Helpers;
 using ELibrary.WebApp.Controllers;
@@ -19,7 +18,6 @@ namespace ELibrary.Tests.Controllers
     [TestClass]
     public class BookControllerTests
     {
-        private Mock<IBookRepository> _bookRepositoryMock = null!;
         private Mock<IBookService> _bookServiceMock = null!;
         private Mock<ILogger<BookController>> _loggerMock = null!;
         private BookController _controller = null!;
@@ -28,12 +26,10 @@ namespace ELibrary.Tests.Controllers
         [TestInitialize]
         public void Initialize()
         {
-            _bookRepositoryMock = new Mock<IBookRepository>();
             _bookServiceMock = new Mock<IBookService>();
             _loggerMock = new Mock<ILogger<BookController>>();
             _bookDtoValidator = new BookDtoValidator();
             _controller = new BookController(
-                _bookRepositoryMock.Object,
                 _bookServiceMock.Object,
                 _loggerMock.Object,
                 _bookDtoValidator);
@@ -46,8 +42,8 @@ namespace ELibrary.Tests.Controllers
         public async Task GetAllBooks_ShouldReturnOkWithBooks()
         {
             // Arrange
-            var books = TestDataBuilder.CreateTestBooks();
-            _bookRepositoryMock.Setup(r => r.GetAllAsync())
+            var books = TestDataBuilder.CreateTestBookDtos();
+            _bookServiceMock.Setup(r => r.GetAllBooksAsync())
                 .ReturnsAsync(books);
 
             // Act
@@ -61,14 +57,14 @@ namespace ELibrary.Tests.Controllers
         }
 
         /// <summary>
-        /// Verifies that FindBooksByCriteria returns OK status with matching books when valid criteria provided.
+        /// Verifies that SearchBooks returns OK status with matching books when valid criteria provided.
         /// </summary>
         [TestMethod]
-        public async Task FindBooksByCriteria_WithValidCriteria_ShouldReturnOkWithBooks()
+        public async Task SearchBooks_WithValidCriteria_ShouldReturnOkWithBooks()
         {
             // Arrange
-            var books = new List<Book> { TestDataBuilder.CreateTestBook(name: "Specific Book") };
-            _bookRepositoryMock.Setup(r => r.GetFilteredBooksAsync("Specific", null, null))
+            var books = new List<BookDto> { TestDataBuilder.CreateTestBookDto(name: "Specific Book") };
+            _bookServiceMock.Setup(r => r.SearchBooksAsync("Specific", null, null))
                 .ReturnsAsync(books);
 
             // Act
@@ -83,14 +79,14 @@ namespace ELibrary.Tests.Controllers
         }
 
         /// <summary>
-        /// Verifies that FindBooksByCriteria returns NotFound when no books match the criteria.
+        /// Verifies that SearchBooks returns NotFound when no books match the criteria.
         /// </summary>
         [TestMethod]
-        public async Task FindBooksByCriteria_WithNoMatches_ShouldReturnNotFound()
+        public async Task SearchBooks_WithNoMatches_ShouldReturnNotFound()
         {
             // Arrange
-            _bookRepositoryMock.Setup(r => r.GetFilteredBooksAsync("NonExistent", null, null))
-                .ReturnsAsync(new List<Book>());
+            _bookServiceMock.Setup(r => r.SearchBooksAsync("NonExistent", null, null))
+                .ReturnsAsync(new List<BookDto>());
 
             // Act
             var result = await _controller.SearchBooks("NonExistent", null, null);
@@ -115,7 +111,7 @@ namespace ELibrary.Tests.Controllers
                 ActualQuantity = 5
             };
 
-            var createdBook = new Book
+            var createdBook = new BookDto
             {
                 ID = Guid.NewGuid(),
                 Name = bookDto.Name,
@@ -125,7 +121,7 @@ namespace ELibrary.Tests.Controllers
                 ActualQuantity = bookDto.ActualQuantity
             };
 
-            _bookServiceMock.Setup(s => s.CreateBookAsync(It.IsAny<Book>()))
+            _bookServiceMock.Setup(s => s.CreateBookAsync(It.IsAny<BookDto>()))
                 .ReturnsAsync(createdBook);
 
             // Act
@@ -164,7 +160,7 @@ namespace ELibrary.Tests.Controllers
         {
             // Arrange
             var bookId = Guid.NewGuid();
-            var updatedBook = TestDataBuilder.CreateTestBook(id: bookId, quantity: 4);
+            var updatedBook = TestDataBuilder.CreateTestBookDto(id: bookId, quantity: 4);
 
             _bookServiceMock.Setup(s => s.BorrowBookAsync(bookId, "John Doe"))
                 .ReturnsAsync((CustomerBookOperationResult.Success, updatedBook));
@@ -242,7 +238,7 @@ namespace ELibrary.Tests.Controllers
         {
             // Arrange
             var bookId = Guid.NewGuid();
-            var updatedBook = TestDataBuilder.CreateTestBook(id: bookId, quantity: 4);
+            var updatedBook = TestDataBuilder.CreateTestBookDto(id: bookId, quantity: 4);
 
             _bookServiceMock.Setup(s => s.BorrowBookAsync(bookId, "anonym"))
                 .ReturnsAsync((CustomerBookOperationResult.Success, updatedBook));
@@ -263,7 +259,7 @@ namespace ELibrary.Tests.Controllers
         {
             // Arrange
             var bookId = Guid.NewGuid();
-            var updatedBook = TestDataBuilder.CreateTestBook(id: bookId, quantity: 6);
+            var updatedBook = TestDataBuilder.CreateTestBookDto(id: bookId, quantity: 6);
 
             _bookServiceMock.Setup(s => s.ReturnBookAsync(bookId, "Jane Doe"))
                 .ReturnsAsync((CustomerBookOperationResult.Success, updatedBook));
@@ -323,7 +319,7 @@ namespace ELibrary.Tests.Controllers
         {
             // Arrange
             var bookId = Guid.NewGuid();
-            var updatedBook = TestDataBuilder.CreateTestBook(id: bookId, quantity: 6);
+            var updatedBook = TestDataBuilder.CreateTestBookDto(id: bookId, quantity: 6);
 
             _bookServiceMock.Setup(s => s.ReturnBookAsync(bookId, "anonym"))
                 .ReturnsAsync((CustomerBookOperationResult.Success, updatedBook));
