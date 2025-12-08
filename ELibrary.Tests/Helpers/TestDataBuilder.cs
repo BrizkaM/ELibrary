@@ -146,5 +146,23 @@ namespace ELibrary.Tests.Helpers
                 Date = DateTime.UtcNow
             };
         }
+
+        /// <summary>
+        /// Creates a test borrow record
+        /// </summary>
+        public static BorrowBookRecordDto CreateBorrowRecordDto(
+            Guid bookId,
+            string customerName = "Test Customer",
+            string action = "Borrowed")
+        {
+            return new BorrowBookRecordDto
+            {
+                ID = Guid.NewGuid(),
+                BookID = bookId,
+                CustomerName = customerName,
+                Action = action,
+                Date = DateTime.UtcNow
+            };
+        }
     }
 }
