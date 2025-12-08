@@ -1,6 +1,7 @@
+using ELibrary.Database.Repositories;
+using ELibrary.Services.Services;
 using ELibrary.Shared.Enums;
 using ELibrary.Tests.Helpers;
-using ELibrary.Database.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -29,11 +30,12 @@ namespace ELibrary.Tests.Services
         {
             // Arrange
             using var context = TestDbContextFactory.CreateInMemoryContext();
-            var bookRepo = new Database.Repositories.BookRepository(context);
-            var borrowRepo = new Database.Repositories.BorrowBookRepository(context);
-            var service = new BookService(bookRepo, borrowRepo, _loggerMock.Object, context);
+            var bookRepo = new BookRepository(context);
+            var borrowRepo = new BorrowBookRepository(context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, _loggerMock.Object);
 
-            var newBook = TestDataBuilder.CreateTestBook(
+            var newBook = TestDataBuilder.CreateTestBookDto(
                 name: "New Book",
                 author: "New Author",
                 isbn: "9876543210123",
@@ -60,11 +62,12 @@ namespace ELibrary.Tests.Services
         {
             // Arrange
             using var context = TestDbContextFactory.CreateInMemoryContext();
-            var bookRepo = new Database.Repositories.BookRepository(context);
-            var borrowRepo = new Database.Repositories.BorrowBookRepository(context);
-            var service = new BookService(bookRepo, borrowRepo, _loggerMock.Object, context);
+            var bookRepo = new BookRepository(context);
+            var borrowRepo = new BorrowBookRepository(context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, _loggerMock.Object);
 
-            var newBook = TestDataBuilder.CreateTestBook(quantity: -1);
+            var newBook = TestDataBuilder.CreateTestBookDto(quantity: -1);
 
             // Act
             Func<Task> act = async () => await service.CreateBookAsync(newBook);
@@ -83,11 +86,12 @@ namespace ELibrary.Tests.Services
         {
             // Arrange
             using var context = TestDbContextFactory.CreateInMemoryContext();
-            var bookRepo = new Database.Repositories.BookRepository(context);
-            var borrowRepo = new Database.Repositories.BorrowBookRepository(context);
-            var service = new BookService(bookRepo, borrowRepo, _loggerMock.Object, context);
+            var bookRepo = new BookRepository(context);
+            var borrowRepo = new BorrowBookRepository(context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, _loggerMock.Object);
 
-            var newBook = TestDataBuilder.CreateTestBook();
+            var newBook = TestDataBuilder.CreateTestBookDto();
             newBook.Year = DateTime.UtcNow.AddYears(1);
 
             // Act
@@ -107,11 +111,12 @@ namespace ELibrary.Tests.Services
         {
             // Arrange
             using var context = TestDbContextFactory.CreateSeededContext();
-            var bookRepo = new Database.Repositories.BookRepository(context);
-            var borrowRepo = new Database.Repositories.BorrowBookRepository(context);
-            var service = new BookService(bookRepo, borrowRepo, _loggerMock.Object, context);
+            var bookRepo = new BookRepository(context);
+            var borrowRepo = new BorrowBookRepository(context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, _loggerMock.Object);
 
-            var newBook = TestDataBuilder.CreateTestBook(isbn: "1234567890123"); // Duplicate ISBN
+            var newBook = TestDataBuilder.CreateTestBookDto(isbn: "1234567890123"); // Duplicate ISBN
 
             // Act
             Func<Task> act = async () => await service.CreateBookAsync(newBook);
@@ -130,9 +135,10 @@ namespace ELibrary.Tests.Services
         {
             // Arrange
             using var context = TestDbContextFactory.CreateSeededContext();
-            var bookRepo = new Database.Repositories.BookRepository(context);
-            var borrowRepo = new Database.Repositories.BorrowBookRepository(context);
-            var service = new BookService(bookRepo, borrowRepo, _loggerMock.Object, context);
+            var bookRepo = new BookRepository(context);
+            var borrowRepo = new BorrowBookRepository(context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, _loggerMock.Object);
 
             var bookId = TestDataBuilder.TestBookId1;
             var originalQuantity = (await bookRepo.GetByIdAsync(bookId))!.ActualQuantity;
@@ -160,9 +166,10 @@ namespace ELibrary.Tests.Services
         {
             // Arrange
             using var context = TestDbContextFactory.CreateInMemoryContext();
-            var bookRepo = new Database.Repositories.BookRepository(context);
-            var borrowRepo = new Database.Repositories.BorrowBookRepository(context);
-            var service = new BookService(bookRepo, borrowRepo, _loggerMock.Object, context);
+            var bookRepo = new BookRepository(context);
+            var borrowRepo = new BorrowBookRepository(context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, _loggerMock.Object);
 
             var nonExistentId = Guid.NewGuid();
 
@@ -182,9 +189,10 @@ namespace ELibrary.Tests.Services
         {
             // Arrange
             using var context = TestDbContextFactory.CreateSeededContext();
-            var bookRepo = new Database.Repositories.BookRepository(context);
-            var borrowRepo = new Database.Repositories.BorrowBookRepository(context);
-            var service = new BookService(bookRepo, borrowRepo, _loggerMock.Object, context);
+            var bookRepo = new BookRepository(context);
+            var borrowRepo = new BorrowBookRepository(context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, _loggerMock.Object);
 
             var bookId = TestDataBuilder.TestBookId3; // This book has 0 quantity
 
@@ -204,9 +212,10 @@ namespace ELibrary.Tests.Services
         {
             // Arrange
             using var context = TestDbContextFactory.CreateSeededContext();
-            var bookRepo = new Database.Repositories.BookRepository(context);
-            var borrowRepo = new Database.Repositories.BorrowBookRepository(context);
-            var service = new BookService(bookRepo, borrowRepo, _loggerMock.Object, context);
+            var bookRepo = new BookRepository(context);
+            var borrowRepo = new BorrowBookRepository(context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, _loggerMock.Object);
 
             var bookId = TestDataBuilder.TestBookId1;
             var originalQuantity = (await bookRepo.GetByIdAsync(bookId))!.ActualQuantity;
@@ -234,9 +243,10 @@ namespace ELibrary.Tests.Services
         {
             // Arrange
             using var context = TestDbContextFactory.CreateInMemoryContext();
-            var bookRepo = new Database.Repositories.BookRepository(context);
-            var borrowRepo = new Database.Repositories.BorrowBookRepository(context);
-            var service = new BookService(bookRepo, borrowRepo, _loggerMock.Object, context);
+            var bookRepo = new BookRepository(context);
+            var borrowRepo = new BorrowBookRepository(context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, _loggerMock.Object);
 
             var nonExistentId = Guid.NewGuid();
 
@@ -256,9 +266,10 @@ namespace ELibrary.Tests.Services
         {
             // Arrange
             using var context = TestDbContextFactory.CreateSeededContext();
-            var bookRepo = new Database.Repositories.BookRepository(context);
-            var borrowRepo = new Database.Repositories.BorrowBookRepository(context);
-            var service = new BookService(bookRepo, borrowRepo, _loggerMock.Object, context);
+            var bookRepo = new BookRepository(context);
+            var borrowRepo = new BorrowBookRepository(context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, _loggerMock.Object);
 
             var bookId = TestDataBuilder.TestBookId2;
 
@@ -285,9 +296,10 @@ namespace ELibrary.Tests.Services
         {
             // Arrange
             using var context = TestDbContextFactory.CreateSeededContext();
-            var bookRepo = new Database.Repositories.BookRepository(context);
-            var borrowRepo = new Database.Repositories.BorrowBookRepository(context);
-            var service = new BookService(bookRepo, borrowRepo, _loggerMock.Object, context);
+            var bookRepo = new BookRepository(context);
+            var borrowRepo = new BorrowBookRepository(context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, _loggerMock.Object);
 
             var bookId = TestDataBuilder.TestBookId1;
             var originalQuantity = (await bookRepo.GetByIdAsync(bookId))!.ActualQuantity;

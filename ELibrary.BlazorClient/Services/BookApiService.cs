@@ -7,6 +7,7 @@ namespace ELibrary.BlazorClient.Services
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<BookApiService> _logger;
+        private const string ApiPrefix = "api/v1";
 
         public BookApiService(HttpClient httpClient, ILogger<BookApiService> logger)
         {
@@ -18,7 +19,7 @@ namespace ELibrary.BlazorClient.Services
         {
             try
             {
-                var books = await _httpClient.GetFromJsonAsync<List<BookDto>>("Book");
+                var books = await _httpClient.GetFromJsonAsync<List<BookDto>>($"{ApiPrefix}/Book");
                 return books ?? new List<BookDto>();
             }
             catch (Exception ex)
@@ -28,7 +29,7 @@ namespace ELibrary.BlazorClient.Services
             }
         }
 
-        public async Task<List<BookDto>> FindBooksByCriteriaAsync(string? name, string? author, string? isbn)
+        public async Task<List<BookDto>> SearchBooksAsync(string? name, string? author, string? isbn)
         {
             try
             {
@@ -41,7 +42,7 @@ namespace ELibrary.BlazorClient.Services
                     query.Add($"isbn={Uri.EscapeDataString(isbn)}");
 
                 var queryString = query.Count > 0 ? "?" + string.Join("&", query) : "";
-                var books = await _httpClient.GetFromJsonAsync<List<BookDto>>($"Book/criteria{queryString}");
+                var books = await _httpClient.GetFromJsonAsync<List<BookDto>>($"{ApiPrefix}/Book/search{queryString}");
                 return books ?? new List<BookDto>();
             }
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -63,7 +64,7 @@ namespace ELibrary.BlazorClient.Services
                 if (!string.IsNullOrWhiteSpace(customerName))
                     query += $"&customerName={Uri.EscapeDataString(customerName)}";
 
-                var response = await _httpClient.PostAsync($"Book/borrow{query}", null);
+                var response = await _httpClient.PostAsync($"{ApiPrefix}/Book/borrow{query}", null);
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -90,7 +91,7 @@ namespace ELibrary.BlazorClient.Services
                 if (!string.IsNullOrWhiteSpace(customerName))
                     query += $"&customerName={Uri.EscapeDataString(customerName)}";
 
-                var response = await _httpClient.PostAsync($"Book/return{query}", null);
+                var response = await _httpClient.PostAsync($"{ApiPrefix}/Book/return{query}", null);
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -113,7 +114,7 @@ namespace ELibrary.BlazorClient.Services
         {
             try
             {
-                var records = await _httpClient.GetFromJsonAsync<List<BorrowBookRecordDto>>("BorrowBookRecord");
+                var records = await _httpClient.GetFromJsonAsync<List<BorrowBookRecordDto>>($"{ApiPrefix}/BorrowBookRecord");
                 return records ?? new List<BorrowBookRecordDto>();
             }
             catch (Exception ex)
@@ -127,7 +128,7 @@ namespace ELibrary.BlazorClient.Services
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("Book", bookDto);
+                var response = await _httpClient.PostAsJsonAsync($"{ApiPrefix}/Book", bookDto);
                 
                 if (response.IsSuccessStatusCode)
                 {

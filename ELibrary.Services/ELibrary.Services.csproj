@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
-    <PackageReference Include="MediatR" Version="14.0.0" />
+    <ProjectReference Include="..\ELibrary.Database\ELibrary.Database.csproj" />
+    <ProjectReference Include="..\Elibrary.Shared\ELibrary.Shared.csproj" />
   </ItemGroup>
 
 </Project>

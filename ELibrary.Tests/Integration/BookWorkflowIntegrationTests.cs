@@ -1,7 +1,7 @@
 using ELibrary.Database.Repositories;
+using ELibrary.Services.Services;
 using ELibrary.Shared.Enums;
 using ELibrary.Tests.Helpers;
-using ELibrary.Database.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -25,10 +25,11 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
             // Create a new book
-            var newBook = TestDataBuilder.CreateTestBook(
+            var newBook = TestDataBuilder.CreateTestBookDto(
                 name: "Integration Test Book",
                 author: "Integration Author",
                 isbn: "9999999999999",
@@ -72,9 +73,10 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
-            var newBook = TestDataBuilder.CreateTestBook(quantity: 2);
+            var newBook = TestDataBuilder.CreateTestBookDto(quantity: 2);
             var createdBook = await service.CreateBookAsync(newBook);
 
             // Act - Borrow all copies
@@ -103,9 +105,10 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
-            var newBook = TestDataBuilder.CreateTestBook(quantity: 10);
+            var newBook = TestDataBuilder.CreateTestBookDto(quantity: 10);
             var createdBook = await service.CreateBookAsync(newBook);
 
             // Act - Multiple operations
@@ -137,14 +140,15 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
             // Create multiple books
-            await service.CreateBookAsync(TestDataBuilder.CreateTestBook(
+            await service.CreateBookAsync(TestDataBuilder.CreateTestBookDto(
                 name: "Fantasy Book 1", author: "Fantasy Author", isbn: "1111111111111"));
-            await service.CreateBookAsync(TestDataBuilder.CreateTestBook(
+            await service.CreateBookAsync(TestDataBuilder.CreateTestBookDto(
                 name: "Fantasy Book 2", author: "Fantasy Author", isbn: "2222222222222"));
-            await service.CreateBookAsync(TestDataBuilder.CreateTestBook(
+            await service.CreateBookAsync(TestDataBuilder.CreateTestBookDto(
                 name: "SciFi Book", author: "SciFi Author", isbn: "3333333333333"));
 
             // Act & Assert - Filter by author
@@ -172,12 +176,13 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
-            var book1 = TestDataBuilder.CreateTestBook(isbn: "DUPLICATE123");
+            var book1 = TestDataBuilder.CreateTestBookDto(isbn: "DUPLICATE123");
             await service.CreateBookAsync(book1);
 
-            var book2 = TestDataBuilder.CreateTestBook(
+            var book2 = TestDataBuilder.CreateTestBookDto(
                 name: "Different Book",
                 isbn: "DUPLICATE123");
 
@@ -200,9 +205,10 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
-            var book = TestDataBuilder.CreateTestBook(quantity: 5);
+            var book = TestDataBuilder.CreateTestBookDto(quantity: 5);
             var createdBook = await service.CreateBookAsync(book);
 
             // Act - Create records over time
@@ -230,14 +236,15 @@ namespace ELibrary.Tests.Integration
             var bookRepo = new BookRepository(context);
             var borrowRepo = new BorrowBookRepository(context);
             var logger = new Mock<ILogger<BookService>>().Object;
-            var service = new BookService(bookRepo, borrowRepo, logger, context);
+            var unitOfWork = new UnitOfWork(context, bookRepo, borrowRepo);
+            var service = new BookService(unitOfWork, logger);
 
             // Create books with different authors
-            await service.CreateBookAsync(TestDataBuilder.CreateTestBook(
+            await service.CreateBookAsync(TestDataBuilder.CreateTestBookDto(
                 author: "Alpha Author", isbn: "1111111111111"));
-            await service.CreateBookAsync(TestDataBuilder.CreateTestBook(
+            await service.CreateBookAsync(TestDataBuilder.CreateTestBookDto(
                 author: "Zulu Author", isbn: "2222222222222"));
-            await service.CreateBookAsync(TestDataBuilder.CreateTestBook(
+            await service.CreateBookAsync(TestDataBuilder.CreateTestBookDto(
                 author: "Beta Author", isbn: "3333333333333"));
 
             // Act

@@ -1,5 +1,5 @@
+using ELibrary.Services.Interfaces;
 using ELibrary.Shared.DTOs;
-using ELibrary.Shared.Interfaces;
 using ELibrary.Tests.Helpers;
 using ELibrary.WebApp.Controllers;
 using FluentAssertions;
@@ -14,13 +14,13 @@ namespace ELibrary.Tests.Controllers
     [TestClass]
     public class BorrowBookRecordControllerTests
     {
-        private Mock<IBorrowBookRecordRepository> _repositoryMock = null!;
+        private Mock<IBorrowBookRecordService> _repositoryMock = null!;
         private BorrowBookRecordController _controller = null!;
 
         [TestInitialize]
         public void Initialize()
         {
-            _repositoryMock = new Mock<IBorrowBookRecordRepository>();
+            _repositoryMock = new Mock<IBorrowBookRecordService>();
             _controller = new BorrowBookRecordController(_repositoryMock.Object);
         }
 
@@ -34,10 +34,10 @@ namespace ELibrary.Tests.Controllers
             var books = TestDataBuilder.CreateTestBooks();
             var records = new[]
             {
-                TestDataBuilder.CreateBorrowRecord(books[0], "Customer 1", "Borrowed"),
-                TestDataBuilder.CreateBorrowRecord(books[1], "Customer 2", "Returned")
+                TestDataBuilder.CreateBorrowRecordDto(books[0].ID, "Customer 1", "Borrowed"),
+                TestDataBuilder.CreateBorrowRecordDto(books[1].ID, "Customer 2", "Returned")
             };
-            _repositoryMock.Setup(r => r.GetAllAsync())
+            _repositoryMock.Setup(r => r.GetAllBorrowBookRecordsAsync())
                 .ReturnsAsync(records);
 
             // Act
@@ -58,8 +58,8 @@ namespace ELibrary.Tests.Controllers
         public async Task GetAllBorrowBookRecords_WithNoRecords_ShouldReturnOkWithEmptyList()
         {
             // Arrange
-            _repositoryMock.Setup(r => r.GetAllAsync())
-                .ReturnsAsync(new List<Shared.Entities.BorrowBookRecord>());
+            _repositoryMock.Setup(r => r.GetAllBorrowBookRecordsAsync())
+                .ReturnsAsync(new List<BorrowBookRecordDto>());
 
             // Act
             var result = await _controller.GetAllBorrowBookRecords();
@@ -80,9 +80,9 @@ namespace ELibrary.Tests.Controllers
         {
             // Arrange
             var book = TestDataBuilder.CreateTestBook();
-            var record = TestDataBuilder.CreateBorrowRecord(book, "John Doe", "Borrowed");
+            var record = TestDataBuilder.CreateBorrowRecordDto(book.ID, "John Doe", "Borrowed");
             record.Date = new DateTime(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc);
-            _repositoryMock.Setup(r => r.GetAllAsync())
+            _repositoryMock.Setup(r => r.GetAllBorrowBookRecordsAsync())
                 .ReturnsAsync(new[] { record });
 
             // Act
@@ -107,14 +107,14 @@ namespace ELibrary.Tests.Controllers
         public async Task GetAllBorrowBookRecords_ShouldCallRepositoryOnce()
         {
             // Arrange
-            _repositoryMock.Setup(r => r.GetAllAsync())
-                .ReturnsAsync(new List<Shared.Entities.BorrowBookRecord>());
+            _repositoryMock.Setup(r => r.GetAllBorrowBookRecordsAsync())
+                .ReturnsAsync(new List<BorrowBookRecordDto>());
 
             // Act
             await _controller.GetAllBorrowBookRecords();
 
             // Assert
-            _repositoryMock.Verify(r => r.GetAllAsync(), Times.Once);
+            _repositoryMock.Verify(r => r.GetAllBorrowBookRecordsAsync(), Times.Once);
         }
     }
 }
