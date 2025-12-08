@@ -1,6 +1,5 @@
+using ELibrary.Services.Interfaces;
 using ELibrary.Shared.DTOs;
-using ELibrary.Shared.Entities;
-using ELibrary.Shared.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ELibrary.WebApp.Controllers
@@ -13,15 +12,14 @@ namespace ELibrary.WebApp.Controllers
     [Produces("application/json")]
     public class BorrowBookRecordController : ControllerBase
     {
-        private readonly IBorrowBookRecordRepository _borrowBookRecordRepository;
-
+        private readonly IBorrowBookRecordService _borrowBookRecordRepositoryService;
         /// <summary>
         /// Cerates a new instance of the BorrowBookRecordController class.
         /// </summary>
         /// <param name="borrowBookRecordRepository">The borrow book record repository.</param>
-        public BorrowBookRecordController(IBorrowBookRecordRepository borrowBookRecordRepository)
+        public BorrowBookRecordController(IBorrowBookRecordService borrowBookRecordRepository)
         {
-            _borrowBookRecordRepository = borrowBookRecordRepository;
+            _borrowBookRecordRepositoryService = borrowBookRecordRepository;
         }
 
         /// <summary>
@@ -32,25 +30,7 @@ namespace ELibrary.WebApp.Controllers
         [ProducesResponseType(typeof(IEnumerable<BorrowBookRecordDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<BorrowBookRecordDto>>> GetAllBorrowBookRecords()
         {
-            var books = await _borrowBookRecordRepository.GetAllAsync();
-            return Ok(books.Select(MapToDto));
-        }
-
-        /// <summary>
-        /// Maps BorrowBookRecord entity to BorrowBookRecordDto.
-        /// </summary>
-        /// <param name="record">The borrow book record.</param>
-        /// <returns>The borrow book recortd dto.</returns>
-        private static BorrowBookRecordDto MapToDto(BorrowBookRecord record)
-        {
-            return new BorrowBookRecordDto
-            {
-                ID = record.ID,
-                BookID = record.BookID,
-                CustomerName = record.CustomerName,
-                Action = record.Action,
-                Date = record.Date
-            };
+            return Ok(await _borrowBookRecordRepositoryService.GetAllBorrowBookRecordsAsync());
         }
     }
 }
