@@ -13,11 +13,11 @@ namespace ELibrary.Api.Controllers
     public class BorrowBookRecordController : ControllerBase
     {
         private readonly IBorrowBookRecordService _borrowBookRecordService;
-        
+
         /// <summary>
-        /// Cerates a new instance of the BorrowBookRecordController class.
+        /// Creates a new instance of the BorrowBookRecordController class.
         /// </summary>
-        /// <param name="borrowBookRecordService">The borrow book record repository.</param>
+        /// <param name="borrowBookRecordService">The borrow book record service.</param>
         public BorrowBookRecordController(IBorrowBookRecordService borrowBookRecordService)
         {
             _borrowBookRecordService = borrowBookRecordService;

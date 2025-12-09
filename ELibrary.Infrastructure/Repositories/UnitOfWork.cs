@@ -1,7 +1,7 @@
 ﻿using ELibrary.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace ELibrary.Database.Repositories
+namespace ELibrary.Infrastructure.Repositories
 {
     /// <summary>
     /// Unit of Work implementation that coordinates the work of multiple repositories

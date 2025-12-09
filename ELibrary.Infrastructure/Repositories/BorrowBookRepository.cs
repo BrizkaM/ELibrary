@@ -2,7 +2,7 @@
 using ELibrary.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace ELibrary.Database.Repositories
+namespace ELibrary.Infrastructure.Repositories
 {
     /// <summary>
     /// Borrow book repository implementation.

@@ -37,7 +37,7 @@ namespace ELibrary.Application.Services
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<BookDto>> SearchBooksAsync(string? name,string? author,string? isbn)
+        public async Task<IEnumerable<BookDto>> SearchBooksAsync(string? name, string? author, string? isbn)
         {
             var entities = await _unitOfWork.Books.GetFilteredBooksAsync(name, author, isbn);
             return entities.Select(MapToDto);
@@ -46,17 +46,17 @@ namespace ELibrary.Application.Services
         /// <inheritdoc/>
         public async Task<BookDto> CreateBookAsync(BookDto book)
         {
-            if(book.ActualQuantity < 0)
-                throw new ArgumentException("Actual quantity cannot be negative.", nameof(book.ActualQuantity));
-
-            if (book.Year > DateTime.UtcNow)
-                throw new ArgumentException("Year cannot be in the future.", nameof(book.Year));
-
+            // Business rule validation: ISBN must be unique
             var existingISBN = await _unitOfWork.Books.GetByISBNAsync(book.ISBN);
             if (existingISBN != null)
-                throw new ArgumentException("Book with the same ISBN already exists.", nameof(book.ISBN));
+            {
+                _logger.LogWarning(
+                    "Attempt to create book with duplicate ISBN. ISBN: {ISBN}",
+                    book.ISBN);
+                throw new ArgumentException($"Book with ISBN '{book.ISBN}' already exists.", nameof(book.ISBN));
+            }
 
-            // Id automaticaly created by EF
+            // Id automatically created by EF
             var addedBook = await _unitOfWork.Books.AddAsync(MapFromDto(book));
             await _unitOfWork.SaveChangesAsync();
 
@@ -104,8 +104,8 @@ namespace ELibrary.Application.Services
                 await _unitOfWork.BorrowRecords.AddAsync(bookRecord);
 
                 _logger.LogInformation(
-                    "Book borrowed successfully. BookId: {BookId}, Title: {Title}, Customer: {CustomerName}, RemainingQuantity: {Quantity}, Timestamp: {Timestamp}",
-                    bookId, book.Name, customerName, book.ActualQuantity, DateTime.UtcNow);
+                    "Book borrowed successfully. BookId: {BookId}, Title: {Title}, Customer: {CustomerName}, RemainingQuantity: {Quantity}",
+                    bookId, book.Name, customerName, book.ActualQuantity);
 
                 // Save changes and commit transaction
                 await _unitOfWork.SaveChangesAsync();
@@ -168,8 +168,8 @@ namespace ELibrary.Application.Services
                 await _unitOfWork.CommitTransactionAsync();
 
                 _logger.LogInformation(
-                    "Book returned successfully. BookId: {BookId}, Title: {Title}, Customer: {CustomerName}, NewQuantity: {Quantity}, Timestamp: {Timestamp}",
-                    bookId, book.Name, customerName, book.ActualQuantity, DateTime.UtcNow);
+                    "Book returned successfully. BookId: {BookId}, Title: {Title}, Customer: {CustomerName}, NewQuantity: {Quantity}",
+                    bookId, book.Name, customerName, book.ActualQuantity);
 
                 return (CustomerBookOperationResult.Success, MapToDto(book));
             }

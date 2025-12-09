@@ -1,7 +1,7 @@
 using ELibrary.Application.Interfaces;
 using ELibrary.Application.Services;
-using ELibrary.Database;
-using ELibrary.Database.Repositories;
+using ELibrary.Infrastructure;
+using ELibrary.Infrastructure.Repositories;
 using ELibrary.Domain.Interfaces;
 using ELibrary.Domain.Validators;
 using FluentValidation;
@@ -72,7 +72,7 @@ try
     builder.Services.AddDbContext<ELibraryDbContext>(options =>
         options.UseSqlite(
             builder.Configuration.GetConnectionString("DefaultConnection"),
-            b => b.MigrationsAssembly("ELibrary.Database")));
+            b => b.MigrationsAssembly("ELibrary.Infrastructure")));
 
     // Repository
     builder.Services.AddScoped<IBookRepository, BookRepository>();

@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace ELibrary.Database.Migrations
+namespace ELibrary.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class UniqueConstraint : Migration

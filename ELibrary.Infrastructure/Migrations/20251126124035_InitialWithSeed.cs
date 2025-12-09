@@ -4,7 +4,7 @@
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace ELibrary.Database.Migrations
+namespace ELibrary.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitialWithSeed : Migration

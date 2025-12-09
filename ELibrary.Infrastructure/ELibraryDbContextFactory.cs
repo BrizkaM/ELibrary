@@ -1,5 +1,5 @@
 ﻿
-using ELibrary.Database;
+using ELibrary.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;

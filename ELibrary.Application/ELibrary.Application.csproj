@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ELibrary.Database\ELibrary.Database.csproj" />
     <ProjectReference Include="..\Elibrary.Domain\ELibrary.Domain.csproj" />
+    <ProjectReference Include="..\ELibrary.Infrastructure\ELibrary.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

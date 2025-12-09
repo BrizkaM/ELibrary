@@ -1,7 +1,7 @@
 using ELibrary.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace ELibrary.Database;
+namespace ELibrary.Infrastructure;
 
 /// <summary>
 /// Database context for ELibrary application
