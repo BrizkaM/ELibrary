@@ -1,4 +1,4 @@
-using ELibrary.BlazorClient.Services;
+using ELibrary.UIBlazorClient.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

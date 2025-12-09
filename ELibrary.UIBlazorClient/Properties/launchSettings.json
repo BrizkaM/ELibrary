@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "ELibrary.BlazorClient": {
+    "ELibrary.UIBlazorClient": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

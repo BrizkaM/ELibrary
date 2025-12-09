@@ -1,7 +1,7 @@
 using ELibrary.Domain.DTOs;
 
 
-namespace ELibrary.BlazorClient.Services
+namespace ELibrary.UIBlazorClient.Services
 {
     public class BookApiService
     {

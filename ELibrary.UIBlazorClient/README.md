@@ -4,7 +4,7 @@ Blazor Server klientská aplikace pro správu knihovny.
 
 ## Obsah projektu
 
-**ELibrary.BlazorClient** - Blazor Server aplikace (čistý UI klient bez business logiky)
+**ELibrary.UIBlazorClient** - Blazor Server aplikace (čistý UI klient bez business logiky)
 
 ## Před spuštěním
 
@@ -50,7 +50,7 @@ API by mělo běžet na `https://localhost:7001`
 V novém terminálu spusťte Blazor projekt:
 
 ```bash
-cd ELibrary.BlazorClient
+cd ELibrary.UIBlazorClient
 dotnet run
 ```
 
@@ -59,11 +59,11 @@ Blazor aplikace bude dostupná na `https://localhost:7002` (nebo jiném portu, k
 ### 3. Spuštění z Visual Studia
 
 1. Otevřete solution ve Visual Studiu
-2. Přidejte projekt `ELibrary.BlazorClient` do solution (pravý klik na solution → Add → Existing Project)
+2. Přidejte projekt `ELibrary.UIBlazorClient` do solution (pravý klik na solution → Add → Existing Project)
 3. Nastavte Multiple Startup Projects:
    - Pravý klik na solution → Properties
    - V Common Properties → Startup Project vyberte "Multiple startup projects"
-   - Nastavte Action = Start pro oba projekty (ELibrary.WebApp a ELibrary.BlazorClient)
+   - Nastavte Action = Start pro oba projekty (ELibrary.WebApp a ELibrary.UIBlazorClient)
 4. Klikněte na Start (F5)
 
 ## Konfigurace
@@ -96,7 +96,7 @@ Pokud API běží na jiném portu, upravte `appsettings.json` v Blazor projektu:
 ## Struktura projektu
 
 ```
-ELibrary.BlazorClient/
+ELibrary.UIBlazorClient/
 ├── Services/
 │   └── BookApiService.cs             # HTTP klient pro komunikaci s API
 ├── Pages/
