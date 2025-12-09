@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace ELibrary.Domain.Validators.Queries
+namespace ELibrary.Application.Validators.Queries
 {
     /// <summary>
     /// Query for searching books by criteria

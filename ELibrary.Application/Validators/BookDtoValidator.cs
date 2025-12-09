@@ -1,7 +1,7 @@
-﻿using ELibrary.Domain.DTOs;
+﻿using ELibrary.Application.DTOs;
 using FluentValidation;
 
-namespace ELibrary.Domain.Validators
+namespace ELibrary.Application.Validators
 {
     /// <summary>
     /// Validator for BookDto to ensure data integrity

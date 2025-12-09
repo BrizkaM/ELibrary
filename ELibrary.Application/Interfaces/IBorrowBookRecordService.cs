@@ -1,4 +1,4 @@
-﻿using ELibrary.Domain.DTOs;
+﻿using ELibrary.Application.DTOs;
 
 namespace ELibrary.Application.Interfaces
 {

@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace ELibrary.Domain.Validators.Commands
+namespace ELibrary.Application.Validators.Commands
 {
     /// <summary>
     /// Command for borrowing a book

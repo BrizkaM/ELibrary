@@ -1,4 +1,4 @@
-﻿using ELibrary.Domain.DTOs;
+﻿using ELibrary.Application.DTOs;
 using FluentValidation;
 
 namespace ELibrary.Domain.Validators

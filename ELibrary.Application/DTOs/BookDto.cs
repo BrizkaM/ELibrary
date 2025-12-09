@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ELibrary.Domain.DTOs
+namespace ELibrary.Application.DTOs
 {
     /// <summary>
     /// Book Data Transfer Object for web API communication.

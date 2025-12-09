@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ELibrary.Application\ELibrary.Application.csproj" />
+    <ProjectReference Include="..\ELibrary.Infrastructure\ELibrary.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
