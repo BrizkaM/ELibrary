@@ -361,6 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/ELibrary.WebApp/ELibraryDB.sqlite
-/ELibrary.WebApp/ELibraryDB.sqlite-shm
-/ELibrary.WebApp/ELibraryDB.sqlite-wal
+/ELibrary.Api/ELibraryDB.sqlite
+/ELibrary.Api/ELibraryDB.sqlite-shm
+/ELibrary.Api/ELibraryDB.sqlite-wal

@@ -1,4 +1,4 @@
-﻿using ELibrary.Shared.Interfaces;
+﻿using ELibrary.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ELibrary.Database.Repositories

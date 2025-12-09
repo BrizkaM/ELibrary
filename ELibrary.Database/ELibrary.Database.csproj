@@ -18,11 +18,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Elibrary.Shared\Elibrary.Shared.csproj" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Migrations\" />
+    <ProjectReference Include="..\Elibrary.Domain\ELibrary.Domain.csproj" />
   </ItemGroup>
 
 </Project>

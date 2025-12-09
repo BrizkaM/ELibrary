@@ -1,5 +1,5 @@
-﻿using ELibrary.Shared.Entities;
-using ELibrary.Shared.Interfaces;
+﻿using ELibrary.Domain.Entities;
+using ELibrary.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace ELibrary.Database.Repositories

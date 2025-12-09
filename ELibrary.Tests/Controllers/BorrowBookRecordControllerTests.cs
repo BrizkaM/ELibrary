@@ -1,4 +1,4 @@
-using ELibrary.Services.Interfaces;
+using ELibrary.Application.Interfaces;
 using ELibrary.Shared.DTOs;
 using ELibrary.Tests.Helpers;
 using ELibrary.WebApp.Controllers;

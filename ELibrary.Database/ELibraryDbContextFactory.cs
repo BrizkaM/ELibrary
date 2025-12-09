@@ -20,7 +20,7 @@ public class ELibraryDbContextFactory : IDesignTimeDbContextFactory<ELibraryDbCo
     {
         var apiProjectPath = Path.Combine(
             Directory.GetCurrentDirectory(),
-            "../ELibrary.WebApp"
+            "../ELibrary.Api"
         );
 
         IConfigurationRoot configuration = new ConfigurationBuilder()

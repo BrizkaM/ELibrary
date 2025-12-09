@@ -1,4 +1,4 @@
-using ELibrary.Shared.Entities;
+using ELibrary.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ELibrary.Database;

@@ -39,7 +39,7 @@ app.UseCors("AllowBlazorClient");
 Nejprve spusťte API projekt:
 
 ```bash
-cd ELibrary.WebApp
+cd ELibrary.Api
 dotnet run
 ```
 

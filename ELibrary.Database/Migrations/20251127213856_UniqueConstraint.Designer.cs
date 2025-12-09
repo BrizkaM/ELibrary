@@ -20,7 +20,7 @@ namespace ELibrary.Database.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
 
-            modelBuilder.Entity("ELibrary.Shared.Entities.Book", b =>
+            modelBuilder.Entity("ELibrary.Domain.Entities.Book", b =>
                 {
                     b.Property<Guid>("ID")
                         .ValueGeneratedOnAdd()
@@ -94,7 +94,7 @@ namespace ELibrary.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("ELibrary.Shared.Entities.BorrowBookRecord", b =>
+            modelBuilder.Entity("ELibrary.Domain.Entities.BorrowBookRecord", b =>
                 {
                     b.Property<Guid>("ID")
                         .ValueGeneratedOnAdd()
@@ -123,9 +123,9 @@ namespace ELibrary.Database.Migrations
                     b.ToTable("BorrowBookRecords");
                 });
 
-            modelBuilder.Entity("ELibrary.Shared.Entities.BorrowBookRecord", b =>
+            modelBuilder.Entity("ELibrary.Domain.Entities.BorrowBookRecord", b =>
                 {
-                    b.HasOne("ELibrary.Shared.Entities.Book", "Book")
+                    b.HasOne("ELibrary.Domain.Entities.Book", "Book")
                         .WithMany("BorrowBookRecords")
                         .HasForeignKey("BookID")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -134,7 +134,7 @@ namespace ELibrary.Database.Migrations
                     b.Navigation("Book");
                 });
 
-            modelBuilder.Entity("ELibrary.Shared.Entities.Book", b =>
+            modelBuilder.Entity("ELibrary.Domain.Entities.Book", b =>
                 {
                     b.Navigation("BorrowBookRecords");
                 });

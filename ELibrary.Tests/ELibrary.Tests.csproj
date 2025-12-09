@@ -29,8 +29,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ELibrary.Database\ELibrary.Database.csproj" />
-    <ProjectReference Include="..\Elibrary.Shared\ELibrary.Shared.csproj" />
-    <ProjectReference Include="..\ELibrary.WebApp\ELibrary.WebApp.csproj" />
+    <ProjectReference Include="..\ELibrary.Services\ELibrary.Application.csproj" />
+    <ProjectReference Include="..\Elibrary.Shared\ELibrary.Domain.csproj" />
+    <ProjectReference Include="..\ELibrary.WebApp\ELibrary.Api.csproj" />
   </ItemGroup>
 
 </Project>
