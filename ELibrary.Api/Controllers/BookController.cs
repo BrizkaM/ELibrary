@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using ELibrary.Application.Commands.Books;
 using ELibrary.Application.Common;
 using ELibrary.Application.DTOs;
@@ -13,7 +14,8 @@ namespace ELibrary.Api.Controllers
     /// Separates read operations (Queries) from write operations (Commands).
     /// </summary>
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [Produces("application/json")]
     public class BookController : ControllerBase
     {

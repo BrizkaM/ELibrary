@@ -28,11 +28,12 @@ namespace ELibrary.Api
                 services.AddEndpointsApiExplorer();
                 services.AddSwaggerGen(c =>
                 {
+                    // V1 documentation
                     c.SwaggerDoc("v1", new OpenApiInfo
                     {
                         Title = "E-Library API",
                         Version = "v1",
-                        Description = "E-Library Management System API with Clean Architecture, CQRS, FluentValidation and Serilog",
+                        Description = "E-Library Management System API with Clean Architecture, CQRS, FluentValidation and Serilog - Version 1.0",
                         Contact = new OpenApiContact
                         {
                             Name = "E-Library Team",

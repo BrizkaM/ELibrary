@@ -54,18 +54,34 @@ try
 			apiKey: context.Configuration["Serilog:SeqApiKey"])
 	);
 
-	// ============================================================================
-	// SERVICES CONFIGURATION
-	// ============================================================================
+    // ============================================================================
+    // API VERSIONING
+    // ============================================================================
+    builder.Services.AddApiVersioning(options =>
+    {
+        options.AssumeDefaultVersionWhenUnspecified = true;
+        options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
+        options.ReportApiVersions = true;
+        options.ApiVersionReader = new Asp.Versioning.UrlSegmentApiVersionReader();
+    }).AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'VVV";
+        options.SubstituteApiVersionInUrl = true;
+    });
 
-	// Infrastructure Layer (Database, Repositories, Unit of Work)
-	builder.Services.AddInfrastructure(builder.Configuration);
+
+    // ============================================================================
+    // SERVICES CONFIGURATION
+    // ============================================================================
+
+    // Infrastructure Layer (Database, Repositories, Unit of Work)
+    builder.Services.AddInfrastructure(builder.Configuration);
 
 	// Application Layer (Services, AutoMapper, FluentValidation)
 	builder.Services.AddApplication();
 
-	// Presentation Layer (Controllers, Swagger, CORS)
-	builder.Services.AddPresentation(builder.Configuration, builder.Environment);
+    // Presentation Layer (Controllers, Swagger, CORS)
+    builder.Services.AddPresentation(builder.Configuration, builder.Environment);
 
 	var app = builder.Build();
 

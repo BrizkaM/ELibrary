@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using ELibrary.Application.DTOs;
 using ELibrary.Application.Interfaces;
 using ELibrary.Application.Queries.BorrowRecords;
@@ -10,7 +11,8 @@ namespace ELibrary.Api.Controllers
     /// Currently supports only query operations (read-only).
     /// </summary>
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [Produces("application/json")]
     public class BorrowBookRecordController : ControllerBase
     {
