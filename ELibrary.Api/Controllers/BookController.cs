@@ -1,13 +1,16 @@
+using ELibrary.Application.Commands.Books;
 using ELibrary.Application.Common;
 using ELibrary.Application.DTOs;
 using ELibrary.Application.Interfaces;
+using ELibrary.Application.Queries.Books;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ELibrary.Api.Controllers
 {
     /// <summary>
-    /// API Controller for managing books in the library
+    /// API Controller for managing books in the library using CQRS pattern.
+    /// Separates read operations (Queries) from write operations (Commands).
     /// </summary>
     [ApiController]
     [Route("api/v1/[controller]")]
@@ -28,6 +31,10 @@ namespace ELibrary.Api.Controllers
             _bookValidator = bookValidator;
         }
 
+        // ============================================================
+        // QUERY ENDPOINTS (Read Operations)
+        // ============================================================
+
         /// <summary>
         /// Gets all books in the library
         /// </summary>
@@ -39,9 +46,10 @@ namespace ELibrary.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<BookDto>>> GetAllBooks()
         {
-            _logger.LogInformation("Retrieving all books from library");
+            _logger.LogInformation("GET /api/v1/book - Retrieving all books");
 
-            var result = await _bookService.GetAllBooksAsync();
+            var query = new GetAllBooksQuery();
+            var result = await _bookService.HandleAsync(query);
 
             if (result.IsFailure)
             {
@@ -90,10 +98,11 @@ namespace ELibrary.Api.Controllers
             }
 
             _logger.LogInformation(
-                "Searching books with criteria: Name={Name}, Author={Author}, ISBN={ISBN}",
+                "GET /api/v1/book/search - Searching books: Name={Name}, Author={Author}, ISBN={ISBN}",
                 name ?? "null", author ?? "null", isbn ?? "null");
 
-            var result = await _bookService.SearchBooksAsync(name, author, isbn);
+            var query = new SearchBooksQuery(name, author, isbn);
+            var result = await _bookService.HandleAsync(query);
 
             if (result.IsFailure)
             {
@@ -119,6 +128,10 @@ namespace ELibrary.Api.Controllers
 
             return Ok(bookList);
         }
+
+        // ============================================================
+        // COMMAND ENDPOINTS (Write Operations)
+        // ============================================================
 
         /// <summary>
         /// Creates a new book in the library
@@ -157,10 +170,19 @@ namespace ELibrary.Api.Controllers
             }
 
             _logger.LogInformation(
-                "Creating new book: {Name} by {Author} (ISBN: {ISBN})",
+                "POST /api/v1/book - Creating book: Name={Name}, Author={Author}, ISBN={ISBN}",
                 bookDto.Name, bookDto.Author, bookDto.ISBN);
 
-            var result = await _bookService.CreateBookAsync(bookDto);
+            // Create command from DTO
+            var command = new CreateBookCommand(
+                bookDto.Name,
+                bookDto.Author,
+                bookDto.Year,
+                bookDto.ISBN,
+                bookDto.ActualQuantity
+            );
+
+            var result = await _bookService.HandleAsync(command);
 
             if (result.IsFailure)
             {
@@ -233,10 +255,11 @@ namespace ELibrary.Api.Controllers
             var customer = customerName ?? "anonym";
 
             _logger.LogInformation(
-                "Customer {CustomerName} attempting to borrow book {BookId}",
+                "POST /api/v1/book/borrow - Customer {CustomerName} borrowing book {BookId}",
                 customer, bookId);
 
-            var result = await _bookService.BorrowBookAsync(bookId, customer);
+            var command = new BorrowBookCommand(bookId, customer);
+            var result = await _bookService.HandleAsync(command);
 
             if (result.IsFailure)
             {
@@ -319,10 +342,11 @@ namespace ELibrary.Api.Controllers
             var customer = customerName ?? "anonym";
 
             _logger.LogInformation(
-                "Customer {CustomerName} attempting to return book {BookId}",
+                "POST /api/v1/book/return - Customer {CustomerName} returning book {BookId}",
                 customer, bookId);
 
-            var result = await _bookService.ReturnBookAsync(bookId, customer);
+            var command = new ReturnBookCommand(bookId, customer);
+            var result = await _bookService.HandleAsync(command);
 
             if (result.IsFailure)
             {

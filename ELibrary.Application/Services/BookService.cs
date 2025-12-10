@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using ELibrary.Application.Commands.Books;
 using ELibrary.Application.Common;
 using ELibrary.Application.DTOs;
 using ELibrary.Application.Interfaces;
+using ELibrary.Application.Queries.Books;
 using ELibrary.Domain.Entities;
 using ELibrary.Domain.Enums;
 using ELibrary.Domain.Interfaces;
@@ -11,7 +13,8 @@ using Microsoft.Extensions.Logging;
 namespace ELibrary.Application.Services
 {
     /// <summary>
-    /// Book service implementation.
+    /// Book service implementation using CQRS pattern.
+    /// Separates read operations (Queries) from write operations (Commands).
     /// </summary>
     public class BookService : IBookService
     {
@@ -19,12 +22,6 @@ namespace ELibrary.Application.Services
         private readonly ILogger<BookService> _logger;
         private readonly IMapper _mapper;
 
-        /// <summary>
-        /// Creates a new instance of the BookService class.
-        /// </summary>
-        /// <param name="unitOfWork">Unit of work.</param>
-        /// <param name="logger">The logger.</param>
-        /// <param name="mapper">The mapper.</param>
         public BookService(IUnitOfWork unitOfWork, ILogger<BookService> logger, IMapper mapper)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
@@ -32,11 +29,19 @@ namespace ELibrary.Application.Services
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        /// <inheritdoc/>
-        public async Task<ELibraryResult<IEnumerable<BookDto>>> GetAllBooksAsync()
+        // ============================================================
+        // QUERY HANDLERS (Read Operations)
+        // ============================================================
+
+        /// <summary>
+        /// Handles GetAllBooksQuery to retrieve all books.
+        /// </summary>
+        public async Task<ELibraryResult<IEnumerable<BookDto>>> HandleAsync(GetAllBooksQuery query)
         {
             try
             {
+                _logger.LogInformation("Handling GetAllBooksQuery");
+
                 var entities = await _unitOfWork.Books.GetAllAsync();
                 var dtos = entities.Select(e => _mapper.Map<BookDto>(e));
 
@@ -46,122 +51,159 @@ namespace ELibrary.Application.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving all books");
+                _logger.LogError(ex, "Error handling GetAllBooksQuery");
                 return ELibraryResult<IEnumerable<BookDto>>.Failure(
                     "An error occurred while retrieving books",
                     ErrorCodes.InvalidOperation);
             }
         }
 
-        /// <inheritdoc/>
-        public async Task<ELibraryResult<IEnumerable<BookDto>>> SearchBooksAsync(string? name, string? author, string? isbn)
+        /// <summary>
+        /// Handles SearchBooksQuery to find books by criteria.
+        /// </summary>
+        public async Task<ELibraryResult<IEnumerable<BookDto>>> HandleAsync(SearchBooksQuery query)
         {
             try
             {
-                var entities = await _unitOfWork.Books.GetFilteredBooksAsync(name, author, isbn);
+                _logger.LogInformation(
+                    "Handling SearchBooksQuery with criteria: Name={Name}, Author={Author}, ISBN={ISBN}",
+                    query.Name ?? "null", query.Author ?? "null", query.ISBN ?? "null");
+
+                var entities = await _unitOfWork.Books.GetFilteredBooksAsync(
+                    query.Name,
+                    query.Author,
+                    query.ISBN);
+
                 var dtos = entities.Select(e => _mapper.Map<BookDto>(e));
 
-                _logger.LogInformation(
-                    "Search completed. Found {Count} books. Criteria: Name={Name}, Author={Author}, ISBN={ISBN}",
-                    dtos.Count(), name ?? "null", author ?? "null", isbn ?? "null");
+                _logger.LogInformation("Search completed. Found {Count} books", dtos.Count());
 
                 return ELibraryResult<IEnumerable<BookDto>>.Success(dtos);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error searching books");
+                _logger.LogError(ex, "Error handling SearchBooksQuery");
                 return ELibraryResult<IEnumerable<BookDto>>.Failure(
                     "An error occurred while searching books",
                     ErrorCodes.InvalidOperation);
             }
         }
 
-        /// <inheritdoc/>
-        public async Task<ELibraryResult<BookDto>> CreateBookAsync(BookDto book)
+        // ============================================================
+        // COMMAND HANDLERS (Write Operations)
+        // ============================================================
+
+        /// <summary>
+        /// Handles CreateBookCommand to add a new book to the library.
+        /// </summary>
+        public async Task<ELibraryResult<BookDto>> HandleAsync(CreateBookCommand command)
         {
             try
             {
-                // Business rule validation: ISBN must be unique
-                var existingISBN = await _unitOfWork.Books.GetByISBNAsync(book.ISBN);
+                _logger.LogInformation(
+                    "Handling CreateBookCommand: Name={Name}, Author={Author}, ISBN={ISBN}",
+                    command.Name, command.Author, command.ISBN);
+
+                // Business rule: ISBN must be unique
+                var existingISBN = await _unitOfWork.Books.GetByISBNAsync(command.ISBN);
                 if (existingISBN != null)
                 {
                     _logger.LogWarning(
-                        "Attempt to create book with duplicate ISBN. ISBN: {ISBN}",
-                        book.ISBN);
+                        "CreateBookCommand failed: Duplicate ISBN={ISBN}",
+                        command.ISBN);
 
                     return ELibraryResult<BookDto>.Failure(
-                        $"Book with ISBN '{book.ISBN}' already exists",
+                        $"Book with ISBN '{command.ISBN}' already exists",
                         ErrorCodes.DuplicateIsbn);
                 }
 
-                // Id automatically created by EF
-                var addedBook = await _unitOfWork.Books.AddAsync(_mapper.Map<Book>(book));
+                // Map command to entity
+                var book = new Book
+                {
+                    Name = command.Name,
+                    Author = command.Author,
+                    Year = command.Year,
+                    ISBN = command.ISBN,
+                    ActualQuantity = command.ActualQuantity
+                };
+
+                var addedBook = await _unitOfWork.Books.AddAsync(book);
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation(
-                    "Book created successfully. BookId: {BookId}, Title: {Title}, Author: {Author}, ISBN: {ISBN}, Quantity: {Quantity}",
-                    addedBook.ID, addedBook.Name, addedBook.Author, addedBook.ISBN, addedBook.ActualQuantity);
+                    "CreateBookCommand succeeded. BookId={BookId}, Title={Title}",
+                    addedBook.ID, addedBook.Name);
 
                 return ELibraryResult<BookDto>.Success(_mapper.Map<BookDto>(addedBook));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating book");
+                _logger.LogError(ex, "Error handling CreateBookCommand");
                 return ELibraryResult<BookDto>.Failure(
                     "An error occurred while creating the book",
                     ErrorCodes.InvalidOperation);
             }
         }
 
-        /// <inheritdoc/>
-        public async Task<ELibraryResult<BookDto>> BorrowBookAsync(Guid bookId, string customerName)
+        /// <summary>
+        /// Handles BorrowBookCommand to borrow a book from the library.
+        /// </summary>
+        public async Task<ELibraryResult<BookDto>> HandleAsync(BorrowBookCommand command)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var book = await _unitOfWork.Books.GetByIdAsync(bookId);
+                _logger.LogInformation(
+                    "Handling BorrowBookCommand: BookId={BookId}, Customer={CustomerName}",
+                    command.BookId, command.CustomerName);
+
+                var book = await _unitOfWork.Books.GetByIdAsync(command.BookId);
 
                 if (book == null)
                 {
                     await _unitOfWork.RollbackTransactionAsync();
-                    _logger.LogWarning("Book not found. BookId: {BookId}", bookId);
+                    _logger.LogWarning("BorrowBookCommand failed: Book not found. BookId={BookId}", command.BookId);
 
                     return ELibraryResult<BookDto>.Failure(
-                        $"Book with ID {bookId} not found",
+                        $"Book with ID {command.BookId} not found",
                         ErrorCodes.NotFound);
                 }
 
                 if (book.ActualQuantity <= 0)
                 {
                     await _unitOfWork.RollbackTransactionAsync();
-                    _logger.LogWarning("Book out of stock. BookId: {BookId}, Title: {Title}", bookId, book.Name);
+                    _logger.LogWarning(
+                        "BorrowBookCommand failed: Out of stock. BookId={BookId}, Title={Title}",
+                        command.BookId, book.Name);
 
                     return ELibraryResult<BookDto>.Failure(
                         $"Book '{book.Name}' is out of stock",
                         ErrorCodes.OutOfStock);
                 }
 
+                // Update book quantity
                 book.ActualQuantity -= 1;
                 _unitOfWork.Books.Update(book);
 
+                // Create borrow record
                 var bookRecord = new BorrowBookRecord
                 {
-                    BookID = bookId,
+                    BookID = command.BookId,
                     Book = book,
-                    CustomerName = customerName,
+                    CustomerName = command.CustomerName,
                     Action = BookActionType.Borrowed.ToString(),
                     Date = DateTime.UtcNow
                 };
 
                 await _unitOfWork.BorrowRecords.AddAsync(bookRecord);
 
-                _logger.LogInformation(
-                    "Book borrowed successfully. BookId: {BookId}, Title: {Title}, Customer: {CustomerName}, RemainingQuantity: {Quantity}",
-                    bookId, book.Name, customerName, book.ActualQuantity);
-
-                // Save changes and commit transaction
+                // Save and commit
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
+
+                _logger.LogInformation(
+                    "BorrowBookCommand succeeded. BookId={BookId}, Customer={CustomerName}, RemainingQuantity={Quantity}",
+                    command.BookId, command.CustomerName, book.ActualQuantity);
 
                 return ELibraryResult<BookDto>.Success(_mapper.Map<BookDto>(book));
             }
@@ -169,19 +211,19 @@ namespace ELibrary.Application.Services
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogWarning(ex,
-                    "Concurrency conflict while borrowing book. BookId: {BookId}, Customer: {CustomerName}",
-                    bookId, customerName);
+                    "BorrowBookCommand failed: Concurrency conflict. BookId={BookId}",
+                    command.BookId);
 
                 return ELibraryResult<BookDto>.Failure(
-                    $"Book with ID {bookId} was updated by another user. Please retry",
+                    $"Book with ID {command.BookId} was updated by another user. Please retry",
                     ErrorCodes.ConcurrencyConflict);
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogError(ex,
-                    "Unexpected error while borrowing book {BookId} for customer {CustomerName}",
-                    bookId, customerName);
+                    "Error handling BorrowBookCommand. BookId={BookId}",
+                    command.BookId);
 
                 return ELibraryResult<BookDto>.Failure(
                     "An unexpected error occurred while borrowing the book",
@@ -189,22 +231,27 @@ namespace ELibrary.Application.Services
             }
         }
 
-        /// <inheritdoc/>
-        public async Task<ELibraryResult<BookDto>> ReturnBookAsync(Guid bookId, string customerName)
+        /// <summary>
+        /// Handles ReturnBookCommand to return a borrowed book.
+        /// </summary>
+        public async Task<ELibraryResult<BookDto>> HandleAsync(ReturnBookCommand command)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                // Get book
-                var book = await _unitOfWork.Books.GetByIdAsync(bookId);
+                _logger.LogInformation(
+                    "Handling ReturnBookCommand: BookId={BookId}, Customer={CustomerName}",
+                    command.BookId, command.CustomerName);
+
+                var book = await _unitOfWork.Books.GetByIdAsync(command.BookId);
 
                 if (book == null)
                 {
                     await _unitOfWork.RollbackTransactionAsync();
-                    _logger.LogWarning("Book not found. BookId: {BookId}", bookId);
+                    _logger.LogWarning("ReturnBookCommand failed: Book not found. BookId={BookId}", command.BookId);
 
                     return ELibraryResult<BookDto>.Failure(
-                        $"Book with ID {bookId} not found",
+                        $"Book with ID {command.BookId} not found",
                         ErrorCodes.NotFound);
                 }
 
@@ -215,22 +262,22 @@ namespace ELibrary.Application.Services
                 // Create return record
                 var bookRecord = new BorrowBookRecord
                 {
-                    BookID = bookId,
+                    BookID = command.BookId,
                     Book = book,
-                    CustomerName = customerName,
+                    CustomerName = command.CustomerName,
                     Action = BookActionType.Returned.ToString(),
                     Date = DateTime.UtcNow
                 };
 
                 await _unitOfWork.BorrowRecords.AddAsync(bookRecord);
 
-                // Save changes and commit transaction
+                // Save and commit
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
                 _logger.LogInformation(
-                    "Book returned successfully. BookId: {BookId}, Title: {Title}, Customer: {CustomerName}, NewQuantity: {Quantity}",
-                    bookId, book.Name, customerName, book.ActualQuantity);
+                    "ReturnBookCommand succeeded. BookId={BookId}, Customer={CustomerName}, NewQuantity={Quantity}",
+                    command.BookId, command.CustomerName, book.ActualQuantity);
 
                 return ELibraryResult<BookDto>.Success(_mapper.Map<BookDto>(book));
             }
@@ -238,19 +285,19 @@ namespace ELibrary.Application.Services
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogWarning(ex,
-                    "Concurrency conflict while returning book. BookId: {BookId}, Customer: {CustomerName}",
-                    bookId, customerName);
+                    "ReturnBookCommand failed: Concurrency conflict. BookId={BookId}",
+                    command.BookId);
 
                 return ELibraryResult<BookDto>.Failure(
-                    $"Book with ID {bookId} was updated by another user. Please retry",
+                    $"Book with ID {command.BookId} was updated by another user. Please retry",
                     ErrorCodes.ConcurrencyConflict);
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogError(ex,
-                    "Unexpected error while returning book. BookId: {BookId}, Customer: {CustomerName}",
-                    bookId, customerName);
+                    "Error handling ReturnBookCommand. BookId={BookId}",
+                    command.BookId);
 
                 return ELibraryResult<BookDto>.Failure(
                     "An unexpected error occurred while returning the book",

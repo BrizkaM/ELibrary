@@ -1,46 +1,59 @@
-﻿using ELibrary.Application.Common;
+﻿using ELibrary.Application.Commands.Books;
+using ELibrary.Application.Common;
 using ELibrary.Application.DTOs;
+using ELibrary.Application.Queries.Books;
 
 namespace ELibrary.Application.Interfaces
 {
+    /// <summary>
+    /// Book service interface using CQRS pattern (Commands and Queries).
+    /// Commands modify state, Queries only read data.
+    /// </summary>
     public interface IBookService
     {
-        /// <summary>
-        /// Gets all books asynchronously.
-        /// </summary>
-        /// <returns>Result containing all books.</returns>
-        Task<ELibraryResult<IEnumerable<BookDto>>> GetAllBooksAsync();
+        // ============================================================
+        // QUERIES (Read Operations - No Side Effects)
+        // ============================================================
 
         /// <summary>
-        /// Creates book asynchronously.
+        /// Handles query to get all books from the library.
         /// </summary>
-        /// <param name="book">The book.</param>
-        /// <returns>Result containing created book or error.</returns>
-        Task<ELibraryResult<BookDto>> CreateBookAsync(BookDto book);
+        /// <param name="query">The get all books query</param>
+        /// <returns>Result containing collection of all books</returns>
+        Task<ELibraryResult<IEnumerable<BookDto>>> HandleAsync(GetAllBooksQuery query);
 
         /// <summary>
-        /// Searches books asynchronously.
+        /// Handles query to search books by criteria.
         /// </summary>
-        /// <param name="title">Name of the Book.</param>
-        /// <param name="author">Author of the book.</param>
-        /// <param name="isbn">Isbn of the book.</param>
-        /// <returns>Result containing matching books or error.</returns>
-        Task<ELibraryResult<IEnumerable<BookDto>>> SearchBooksAsync(string? title, string? author, string? isbn);
+        /// <param name="query">The search books query with criteria</param>
+        /// <returns>Result containing collection of matching books</returns>
+        Task<ELibraryResult<IEnumerable<BookDto>>> HandleAsync(SearchBooksQuery query);
+
+        // ============================================================
+        // COMMANDS (Write Operations - Modify State)
+        // ============================================================
 
         /// <summary>
-        /// Borrows book for customer asynchronously. Decrease the ActualQuantity by 1.
+        /// Handles command to create a new book in the library.
         /// </summary>
-        /// <param name="bookId">The book identifier.</param>
-        /// <param name="customerName">The customer's name.</param>
-        /// <returns>Result containing updated book or error (NotFound, OutOfStock, Conflict).</returns>
-        Task<ELibraryResult<BookDto>> BorrowBookAsync(Guid bookId, string customerName);
+        /// <param name="command">The create book command</param>
+        /// <returns>Result containing the created book or error</returns>
+        Task<ELibraryResult<BookDto>> HandleAsync(CreateBookCommand command);
 
         /// <summary>
-        /// Returns book from customer asynchronously. Increases the ActualQuantity by 1.
+        /// Handles command to borrow a book from the library.
+        /// Decreases book quantity by 1 and records the transaction.
         /// </summary>
-        /// <param name="bookId">The book identifier.</param>
-        /// <param name="customerName">The customer's name.</param>
-        /// <returns>Result containing updated book or error (NotFound, Conflict).</returns>
-        Task<ELibraryResult<BookDto>> ReturnBookAsync(Guid bookId, string customerName);
+        /// <param name="command">The borrow book command</param>
+        /// <returns>Result containing updated book or error (NotFound, OutOfStock, Conflict)</returns>
+        Task<ELibraryResult<BookDto>> HandleAsync(BorrowBookCommand command);
+
+        /// <summary>
+        /// Handles command to return a borrowed book to the library.
+        /// Increases book quantity by 1 and records the transaction.
+        /// </summary>
+        /// <param name="command">The return book command</param>
+        /// <returns>Result containing updated book or error (NotFound, Conflict)</returns>
+        Task<ELibraryResult<BookDto>> HandleAsync(ReturnBookCommand command);
     }
 }

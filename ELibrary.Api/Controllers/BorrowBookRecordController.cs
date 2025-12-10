@@ -1,11 +1,13 @@
 using ELibrary.Application.DTOs;
 using ELibrary.Application.Interfaces;
+using ELibrary.Application.Queries.BorrowRecords;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ELibrary.Api.Controllers
 {
     /// <summary>
-    /// Implements API endpoints for managing borrow book records.
+    /// API Controller for managing borrow book records using CQRS pattern.
+    /// Currently supports only query operations (read-only).
     /// </summary>
     [ApiController]
     [Route("api/v1/[controller]")]
@@ -15,11 +17,6 @@ namespace ELibrary.Api.Controllers
         private readonly IBorrowBookRecordService _borrowBookRecordService;
         private readonly ILogger<BorrowBookRecordController> _logger;
 
-        /// <summary>
-        /// Creates a new instance of the BorrowBookRecordController class.
-        /// </summary>
-        /// <param name="borrowBookRecordService">The borrow book record service.</param>
-        /// <param name="logger">The logger.</param>
         public BorrowBookRecordController(
             IBorrowBookRecordService borrowBookRecordService,
             ILogger<BorrowBookRecordController> logger)
@@ -39,9 +36,10 @@ namespace ELibrary.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<BorrowBookRecordDto>>> GetAllBorrowBookRecords()
         {
-            _logger.LogInformation("Retrieving all borrow book records");
+            _logger.LogInformation("GET /api/v1/borrowbookrecord - Retrieving all borrow book records");
 
-            var result = await _borrowBookRecordService.GetAllBorrowBookRecordsAsync();
+            var query = new GetAllBorrowRecordsQuery();
+            var result = await _borrowBookRecordService.HandleAsync(query);
 
             if (result.IsFailure)
             {
