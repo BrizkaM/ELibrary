@@ -1,4 +1,5 @@
-﻿using ELibrary.Application.DTOs;
+﻿using ELibrary.Application.Common;
+using ELibrary.Application.DTOs;
 
 namespace ELibrary.Application.Interfaces
 {
@@ -7,7 +8,7 @@ namespace ELibrary.Application.Interfaces
         /// <summary>
         /// Gets all borrow book records asynchronously.
         /// </summary>
-        /// <returns>All borrow books records.</returns>
-        Task<IEnumerable<BorrowBookRecordDto>> GetAllBorrowBookRecordsAsync();
+        /// <returns>Result containing all borrow book records.</returns>
+        Task<ELibraryResult<IEnumerable<BorrowBookRecordDto>>> GetAllBorrowBookRecordsAsync();
     }
 }

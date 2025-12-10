@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ELibrary.Application.Common;
 using ELibrary.Application.DTOs;
 using ELibrary.Application.Interfaces;
 using ELibrary.Domain.Interfaces;
@@ -7,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace ELibrary.Application.Services
 {
     /// <summary>
-    /// Book service implementation.
+    /// Borrow book record service implementation.
     /// </summary>
     public class BorrowBookRecordService : IBorrowBookRecordService
     {
@@ -18,8 +19,9 @@ namespace ELibrary.Application.Services
         /// <summary>
         /// Creates a new instance of the BorrowBookRecordService class.
         /// </summary>
-        /// <param name="unitOfWork">Borrow book repository.</param>
+        /// <param name="unitOfWork">Unit of work.</param>
         /// <param name="logger">The logger.</param>
+        /// <param name="mapper">The mapper.</param>
         public BorrowBookRecordService(IUnitOfWork unitOfWork, ILogger<BorrowBookRecordService> logger, IMapper mapper)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
@@ -28,10 +30,24 @@ namespace ELibrary.Application.Services
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<BorrowBookRecordDto>> GetAllBorrowBookRecordsAsync()
+        public async Task<ELibraryResult<IEnumerable<BorrowBookRecordDto>>> GetAllBorrowBookRecordsAsync()
         {
-            var entities = await _unitOfWork.BorrowRecords.GetAllAsync();
-            return entities.Select(e => _mapper.Map<BorrowBookRecordDto>(e));
+            try
+            {
+                var entities = await _unitOfWork.BorrowRecords.GetAllAsync();
+                var dtos = entities.Select(e => _mapper.Map<BorrowBookRecordDto>(e));
+
+                _logger.LogInformation("Retrieved {Count} borrow book records", dtos.Count());
+
+                return ELibraryResult<IEnumerable<BorrowBookRecordDto>>.Success(dtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving borrow book records");
+                return ELibraryResult<IEnumerable<BorrowBookRecordDto>>.Failure(
+                    "An error occurred while retrieving borrow book records",
+                    ErrorCodes.InvalidOperation);
+            }
         }
     }
 }

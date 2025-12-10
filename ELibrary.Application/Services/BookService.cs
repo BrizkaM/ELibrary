@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ELibrary.Application.Common;
 using ELibrary.Application.DTOs;
 using ELibrary.Application.Interfaces;
 using ELibrary.Domain.Entities;
@@ -21,10 +22,9 @@ namespace ELibrary.Application.Services
         /// <summary>
         /// Creates a new instance of the BookService class.
         /// </summary>
-        /// <param name="bookRepo">Book repository.</param>
-        /// <param name="borrowBookRepo">Borrow book repository.</param>
+        /// <param name="unitOfWork">Unit of work.</param>
         /// <param name="logger">The logger.</param>
-        /// <param name="context">DB context.</param>
+        /// <param name="mapper">The mapper.</param>
         public BookService(IUnitOfWork unitOfWork, ILogger<BookService> logger, IMapper mapper)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
@@ -33,46 +33,88 @@ namespace ELibrary.Application.Services
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<BookDto>> GetAllBooksAsync()
+        public async Task<ELibraryResult<IEnumerable<BookDto>>> GetAllBooksAsync()
         {
-            var entities = await _unitOfWork.Books.GetAllAsync();
-            return entities.Select(e => _mapper.Map<BookDto>(e));
-        }
-
-        /// <inheritdoc/>
-        public async Task<IEnumerable<BookDto>> SearchBooksAsync(string? name, string? author, string? isbn)
-        {
-            var entities = await _unitOfWork.Books.GetFilteredBooksAsync(name, author, isbn);
-            return entities.Select(e => _mapper.Map<BookDto>(e));
-        }
-
-        /// <inheritdoc/>
-        public async Task<BookDto> CreateBookAsync(BookDto book)
-        {
-            // Business rule validation: ISBN must be unique
-
-            var existingISBN = await _unitOfWork.Books.GetByISBNAsync(book.ISBN);
-            if (existingISBN != null)
+            try
             {
-                _logger.LogWarning(
-                    "Attempt to create book with duplicate ISBN. ISBN: {ISBN}",
-                    book.ISBN);
-                throw new ArgumentException($"Book with ISBN '{book.ISBN}' already exists.", nameof(book.ISBN));
+                var entities = await _unitOfWork.Books.GetAllAsync();
+                var dtos = entities.Select(e => _mapper.Map<BookDto>(e));
+
+                _logger.LogInformation("Retrieved {Count} books", dtos.Count());
+
+                return ELibraryResult<IEnumerable<BookDto>>.Success(dtos);
             }
-
-            // Id automatically created by EF
-            var addedBook = await _unitOfWork.Books.AddAsync(_mapper.Map<Book>(book));
-            await _unitOfWork.SaveChangesAsync();
-
-            _logger.LogInformation(
-                "Book created successfully. BookId: {BookId}, Title: {Title}, Author: {Author}, ISBN: {ISBN}, Quantity: {Quantity}",
-                addedBook.ID, addedBook.Name, addedBook.Author, addedBook.ISBN, addedBook.ActualQuantity);
-
-            return _mapper.Map<BookDto>(addedBook);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all books");
+                return ELibraryResult<IEnumerable<BookDto>>.Failure(
+                    "An error occurred while retrieving books",
+                    ErrorCodes.InvalidOperation);
+            }
         }
 
         /// <inheritdoc/>
-        public async Task<(CustomerBookOperationResult OperationResult, BookDto? UpdatedBook)> BorrowBookAsync(Guid bookId, string customerName)
+        public async Task<ELibraryResult<IEnumerable<BookDto>>> SearchBooksAsync(string? name, string? author, string? isbn)
+        {
+            try
+            {
+                var entities = await _unitOfWork.Books.GetFilteredBooksAsync(name, author, isbn);
+                var dtos = entities.Select(e => _mapper.Map<BookDto>(e));
+
+                _logger.LogInformation(
+                    "Search completed. Found {Count} books. Criteria: Name={Name}, Author={Author}, ISBN={ISBN}",
+                    dtos.Count(), name ?? "null", author ?? "null", isbn ?? "null");
+
+                return ELibraryResult<IEnumerable<BookDto>>.Success(dtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching books");
+                return ELibraryResult<IEnumerable<BookDto>>.Failure(
+                    "An error occurred while searching books",
+                    ErrorCodes.InvalidOperation);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<ELibraryResult<BookDto>> CreateBookAsync(BookDto book)
+        {
+            try
+            {
+                // Business rule validation: ISBN must be unique
+                var existingISBN = await _unitOfWork.Books.GetByISBNAsync(book.ISBN);
+                if (existingISBN != null)
+                {
+                    _logger.LogWarning(
+                        "Attempt to create book with duplicate ISBN. ISBN: {ISBN}",
+                        book.ISBN);
+
+                    return ELibraryResult<BookDto>.Failure(
+                        $"Book with ISBN '{book.ISBN}' already exists",
+                        ErrorCodes.DuplicateIsbn);
+                }
+
+                // Id automatically created by EF
+                var addedBook = await _unitOfWork.Books.AddAsync(_mapper.Map<Book>(book));
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Book created successfully. BookId: {BookId}, Title: {Title}, Author: {Author}, ISBN: {ISBN}, Quantity: {Quantity}",
+                    addedBook.ID, addedBook.Name, addedBook.Author, addedBook.ISBN, addedBook.ActualQuantity);
+
+                return ELibraryResult<BookDto>.Success(_mapper.Map<BookDto>(addedBook));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating book");
+                return ELibraryResult<BookDto>.Failure(
+                    "An error occurred while creating the book",
+                    ErrorCodes.InvalidOperation);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<ELibraryResult<BookDto>> BorrowBookAsync(Guid bookId, string customerName)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -83,14 +125,20 @@ namespace ELibrary.Application.Services
                 {
                     await _unitOfWork.RollbackTransactionAsync();
                     _logger.LogWarning("Book not found. BookId: {BookId}", bookId);
-                    return (CustomerBookOperationResult.NotFound, null);
+
+                    return ELibraryResult<BookDto>.Failure(
+                        $"Book with ID {bookId} not found",
+                        ErrorCodes.NotFound);
                 }
 
                 if (book.ActualQuantity <= 0)
                 {
                     await _unitOfWork.RollbackTransactionAsync();
                     _logger.LogWarning("Book out of stock. BookId: {BookId}, Title: {Title}", bookId, book.Name);
-                    return (CustomerBookOperationResult.OutOfStock, null);
+
+                    return ELibraryResult<BookDto>.Failure(
+                        $"Book '{book.Name}' is out of stock",
+                        ErrorCodes.OutOfStock);
                 }
 
                 book.ActualQuantity -= 1;
@@ -115,7 +163,7 @@ namespace ELibrary.Application.Services
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-                return (CustomerBookOperationResult.Success, _mapper.Map<BookDto>(book));
+                return ELibraryResult<BookDto>.Success(_mapper.Map<BookDto>(book));
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -123,7 +171,10 @@ namespace ELibrary.Application.Services
                 _logger.LogWarning(ex,
                     "Concurrency conflict while borrowing book. BookId: {BookId}, Customer: {CustomerName}",
                     bookId, customerName);
-                return (CustomerBookOperationResult.Conflict, null);
+
+                return ELibraryResult<BookDto>.Failure(
+                    $"Book with ID {bookId} was updated by another user. Please retry",
+                    ErrorCodes.ConcurrencyConflict);
             }
             catch (Exception ex)
             {
@@ -131,12 +182,15 @@ namespace ELibrary.Application.Services
                 _logger.LogError(ex,
                     "Unexpected error while borrowing book {BookId} for customer {CustomerName}",
                     bookId, customerName);
-                throw;
+
+                return ELibraryResult<BookDto>.Failure(
+                    "An unexpected error occurred while borrowing the book",
+                    ErrorCodes.InvalidOperation);
             }
         }
 
         /// <inheritdoc/>
-        public async Task<(CustomerBookOperationResult OperationResult, BookDto? UpdatedBook)> ReturnBookAsync(Guid bookId, string customerName)
+        public async Task<ELibraryResult<BookDto>> ReturnBookAsync(Guid bookId, string customerName)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -148,7 +202,10 @@ namespace ELibrary.Application.Services
                 {
                     await _unitOfWork.RollbackTransactionAsync();
                     _logger.LogWarning("Book not found. BookId: {BookId}", bookId);
-                    return (CustomerBookOperationResult.NotFound, null);
+
+                    return ELibraryResult<BookDto>.Failure(
+                        $"Book with ID {bookId} not found",
+                        ErrorCodes.NotFound);
                 }
 
                 // Update book quantity
@@ -175,7 +232,7 @@ namespace ELibrary.Application.Services
                     "Book returned successfully. BookId: {BookId}, Title: {Title}, Customer: {CustomerName}, NewQuantity: {Quantity}",
                     bookId, book.Name, customerName, book.ActualQuantity);
 
-                return (CustomerBookOperationResult.Success, _mapper.Map<BookDto>(book));
+                return ELibraryResult<BookDto>.Success(_mapper.Map<BookDto>(book));
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -183,7 +240,10 @@ namespace ELibrary.Application.Services
                 _logger.LogWarning(ex,
                     "Concurrency conflict while returning book. BookId: {BookId}, Customer: {CustomerName}",
                     bookId, customerName);
-                return (CustomerBookOperationResult.Conflict, null);
+
+                return ELibraryResult<BookDto>.Failure(
+                    $"Book with ID {bookId} was updated by another user. Please retry",
+                    ErrorCodes.ConcurrencyConflict);
             }
             catch (Exception ex)
             {
@@ -191,7 +251,10 @@ namespace ELibrary.Application.Services
                 _logger.LogError(ex,
                     "Unexpected error while returning book. BookId: {BookId}, Customer: {CustomerName}",
                     bookId, customerName);
-                throw;
+
+                return ELibraryResult<BookDto>.Failure(
+                    "An unexpected error occurred while returning the book",
+                    ErrorCodes.InvalidOperation);
             }
         }
     }

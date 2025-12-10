@@ -1,5 +1,5 @@
-﻿using ELibrary.Application.DTOs;
-using ELibrary.Domain.Enums;
+﻿using ELibrary.Application.Common;
+using ELibrary.Application.DTOs;
 
 namespace ELibrary.Application.Interfaces
 {
@@ -8,15 +8,15 @@ namespace ELibrary.Application.Interfaces
         /// <summary>
         /// Gets all books asynchronously.
         /// </summary>
-        /// <returns>All books.</returns>
-        Task<IEnumerable<BookDto>> GetAllBooksAsync();
+        /// <returns>Result containing all books.</returns>
+        Task<ELibraryResult<IEnumerable<BookDto>>> GetAllBooksAsync();
 
         /// <summary>
         /// Creates book asynchronously.
         /// </summary>
         /// <param name="book">The book.</param>
-        /// <returns>Created book.</returns>
-        Task<BookDto> CreateBookAsync(BookDto book);
+        /// <returns>Result containing created book or error.</returns>
+        Task<ELibraryResult<BookDto>> CreateBookAsync(BookDto book);
 
         /// <summary>
         /// Searches books asynchronously.
@@ -24,23 +24,23 @@ namespace ELibrary.Application.Interfaces
         /// <param name="title">Name of the Book.</param>
         /// <param name="author">Author of the book.</param>
         /// <param name="isbn">Isbn of the book.</param>
-        /// <returns></returns>
-        Task<IEnumerable<BookDto>> SearchBooksAsync(string? title, string? author, string? isbn);
+        /// <returns>Result containing matching books or error.</returns>
+        Task<ELibraryResult<IEnumerable<BookDto>>> SearchBooksAsync(string? title, string? author, string? isbn);
 
         /// <summary>
         /// Borrows book for customer asynchronously. Decrease the ActualQuantity by 1.
         /// </summary>
         /// <param name="bookId">The book identifier.</param>
         /// <param name="customerName">The customer's name.</param>
-        /// <returns>Operation result and Updated book in case of success.</returns>
-        Task<(CustomerBookOperationResult OperationResult, BookDto? UpdatedBook)> BorrowBookAsync(Guid bookId, string customerName);
+        /// <returns>Result containing updated book or error (NotFound, OutOfStock, Conflict).</returns>
+        Task<ELibraryResult<BookDto>> BorrowBookAsync(Guid bookId, string customerName);
 
         /// <summary>
         /// Returns book from customer asynchronously. Increases the ActualQuantity by 1.
         /// </summary>
         /// <param name="bookId">The book identifier.</param>
         /// <param name="customerName">The customer's name.</param>
-        /// <returns>Operation result and Updated book in case of success.</returns>
-        Task<(CustomerBookOperationResult OperationResult, BookDto? UpdatedBook)> ReturnBookAsync(Guid bookId, string customerName);
+        /// <returns>Result containing updated book or error (NotFound, Conflict).</returns>
+        Task<ELibraryResult<BookDto>> ReturnBookAsync(Guid bookId, string customerName);
     }
 }
