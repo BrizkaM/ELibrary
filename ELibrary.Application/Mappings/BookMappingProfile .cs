@@ -15,7 +15,6 @@ namespace ELibrary.Application.Mappings
             CreateMap<Book, BookDto>()
                 .ReverseMap();
 
-            // If you need custom mapping, you can do:
             // CreateMap<Book, BookDto>()
             //     .ForMember(dest => dest.SomeProperty, opt => opt.MapFrom(src => src.SomeOtherProperty));
         }

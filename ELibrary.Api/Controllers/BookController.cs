@@ -4,7 +4,6 @@ using ELibrary.Application.Commands.Books;
 using ELibrary.Application.DTOs;
 using ELibrary.Application.Interfaces;
 using ELibrary.Application.Queries.Books;
-using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ELibrary.Api.Controllers
@@ -12,6 +11,7 @@ namespace ELibrary.Api.Controllers
     /// <summary>
     /// API Controller for managing books in the library using CQRS pattern.
     /// Separates read operations (Queries) from write operations (Commands).
+    /// Uses automatic FluentValidation via model binding.
     /// </summary>
     [ApiController]
     [ApiVersion("1.0")]
@@ -21,16 +21,13 @@ namespace ELibrary.Api.Controllers
     {
         private readonly IBookService _bookService;
         private readonly ILogger<BookController> _logger;
-        private readonly IValidator<BookDto> _bookValidator;
 
         public BookController(
             IBookService bookService,
-            ILogger<BookController> logger,
-            IValidator<BookDto> bookValidator)
+            ILogger<BookController> logger)
         {
             _bookService = bookService;
             _logger = logger;
-            _bookValidator = bookValidator;
         }
 
         // ============================================================
@@ -75,24 +72,13 @@ namespace ELibrary.Api.Controllers
             [FromQuery] string? author,
             [FromQuery] string? isbn)
         {
-            // Validate at least one criterion
-            if (string.IsNullOrWhiteSpace(name) &&
-                string.IsNullOrWhiteSpace(author) &&
-                string.IsNullOrWhiteSpace(isbn))
-            {
-                _logger.LogWarning("Search attempted with no criteria");
-                return BadRequest(new
-                {
-                    error = "At least one search criterion must be provided",
-                    details = "Provide name, author, or ISBN to search"
-                });
-            }
+            var query = new SearchBooksQuery(name, author, isbn);
+            // auto validation by FluentValidation
 
             _logger.LogInformation(
                 "GET /api/v1/book/search - Searching: Name={Name}, Author={Author}, ISBN={ISBN}",
                 name ?? "null", author ?? "null", isbn ?? "null");
 
-            var query = new SearchBooksQuery(name, author, isbn);
             var result = await _bookService.HandleAsync(query);
 
             return result.ToActionResult(this);
@@ -116,39 +102,11 @@ namespace ELibrary.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<BookDto>> CreateBook([FromBody] BookDto bookDto)
+        public async Task<ActionResult<BookDto>> CreateBook([FromBody] CreateBookCommand command)
         {
-            // FluentValidation
-            var validationResult = await _bookValidator.ValidateAsync(bookDto);
-            if (!validationResult.IsValid)
-            {
-                _logger.LogWarning(
-                    "Book creation failed validation: {Errors}",
-                    string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
-
-                return BadRequest(new
-                {
-                    type = "ValidationError",
-                    title = "One or more validation errors occurred",
-                    errors = validationResult.Errors
-                        .GroupBy(e => e.PropertyName)
-                        .ToDictionary(
-                            g => g.Key,
-                            g => g.Select(e => e.ErrorMessage).ToArray())
-                });
-            }
-
             _logger.LogInformation(
                 "POST /api/v1/book - Creating book: Name={Name}, Author={Author}, ISBN={ISBN}",
-                bookDto.Name, bookDto.Author, bookDto.ISBN);
-
-            var command = new CreateBookCommand(
-                bookDto.Name,
-                bookDto.Author,
-                bookDto.Year,
-                bookDto.ISBN,
-                bookDto.ActualQuantity
-            );
+                command.Name, command.Author, command.ISBN);
 
             var result = await _bookService.HandleAsync(command);
 
@@ -159,7 +117,7 @@ namespace ELibrary.Api.Controllers
         }
 
         /// <summary>
-        /// Borrows a book for a customer
+        /// Borrows a book to a customer
         /// </summary>
         /// <param name="bookId">The ID of the book to borrow</param>
         /// <param name="customerName">The name of the customer (optional, defaults to "anonym")</param>
@@ -179,19 +137,13 @@ namespace ELibrary.Api.Controllers
             [FromQuery] Guid bookId,
             [FromQuery] string? customerName)
         {
-            if (bookId == Guid.Empty)
-            {
-                _logger.LogWarning("Borrow attempt with empty book ID");
-                return BadRequest(new { error = "Book ID cannot be empty" });
-            }
-
-            var customer = customerName ?? "anonym";
+            var command = new BorrowBookCommand(bookId, customerName ?? "anonym");
+            // auto validation by FluentValidation
 
             _logger.LogInformation(
                 "POST /api/v1/book/borrow - Customer {CustomerName} borrowing book {BookId}",
-                customer, bookId);
+                command.CustomerName, bookId);
 
-            var command = new BorrowBookCommand(bookId, customer);
             var result = await _bookService.HandleAsync(command);
 
             return result.ToActionResult(this);
@@ -218,19 +170,13 @@ namespace ELibrary.Api.Controllers
             [FromQuery] Guid bookId,
             [FromQuery] string? customerName)
         {
-            if (bookId == Guid.Empty)
-            {
-                _logger.LogWarning("Return attempt with empty book ID");
-                return BadRequest(new { error = "Book ID cannot be empty" });
-            }
-
-            var customer = customerName ?? "anonym";
+            var command = new ReturnBookCommand(bookId, customerName ?? "anonym");
+            // auto validation by FluentValidation
 
             _logger.LogInformation(
                 "POST /api/v1/book/return - Customer {CustomerName} returning book {BookId}",
-                customer, bookId);
+                command.CustomerName, bookId);
 
-            var command = new ReturnBookCommand(bookId, customer);
             var result = await _bookService.HandleAsync(command);
 
             return result.ToActionResult(this);
