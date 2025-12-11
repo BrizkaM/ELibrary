@@ -1,6 +1,6 @@
 using Asp.Versioning;
+using ELibrary.Api.Extensions;
 using ELibrary.Application.Commands.Books;
-using ELibrary.Application.Common;
 using ELibrary.Application.DTOs;
 using ELibrary.Application.Interfaces;
 using ELibrary.Application.Queries.Books;
@@ -53,18 +53,7 @@ namespace ELibrary.Api.Controllers
             var query = new GetAllBooksQuery();
             var result = await _bookService.HandleAsync(query);
 
-            if (result.IsFailure)
-            {
-                _logger.LogError("Failed to retrieve books: {Error}", result.Error);
-                return StatusCode(500, new
-                {
-                    error = "Internal server error",
-                    message = result.Error,
-                    errorCode = result.ErrorCode
-                });
-            }
-
-            return Ok(result.Value);
+            return result.ToActionResult(this);
         }
 
         /// <summary>
@@ -86,7 +75,7 @@ namespace ELibrary.Api.Controllers
             [FromQuery] string? author,
             [FromQuery] string? isbn)
         {
-            // Validate at least one search criterion is provided
+            // Validate at least one criterion
             if (string.IsNullOrWhiteSpace(name) &&
                 string.IsNullOrWhiteSpace(author) &&
                 string.IsNullOrWhiteSpace(isbn))
@@ -100,35 +89,13 @@ namespace ELibrary.Api.Controllers
             }
 
             _logger.LogInformation(
-                "GET /api/v1/book/search - Searching books: Name={Name}, Author={Author}, ISBN={ISBN}",
+                "GET /api/v1/book/search - Searching: Name={Name}, Author={Author}, ISBN={ISBN}",
                 name ?? "null", author ?? "null", isbn ?? "null");
 
             var query = new SearchBooksQuery(name, author, isbn);
             var result = await _bookService.HandleAsync(query);
 
-            if (result.IsFailure)
-            {
-                _logger.LogError("Search failed: {Error}", result.Error);
-                return StatusCode(500, new
-                {
-                    error = "Internal server error",
-                    message = result.Error,
-                    errorCode = result.ErrorCode
-                });
-            }
-
-            var bookList = result.Value.ToList();
-
-            if (!bookList.Any())
-            {
-                _logger.LogInformation("No books found matching search criteria");
-            }
-            else
-            {
-                _logger.LogInformation("Found {Count} books matching search criteria", bookList.Count);
-            }
-
-            return Ok(bookList);
+            return result.ToActionResult(this);
         }
 
         // ============================================================
@@ -151,7 +118,7 @@ namespace ELibrary.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<BookDto>> CreateBook([FromBody] BookDto bookDto)
         {
-            // Manual validation (FluentValidation also runs automatically)
+            // FluentValidation
             var validationResult = await _bookValidator.ValidateAsync(bookDto);
             if (!validationResult.IsValid)
             {
@@ -175,7 +142,6 @@ namespace ELibrary.Api.Controllers
                 "POST /api/v1/book - Creating book: Name={Name}, Author={Author}, ISBN={ISBN}",
                 bookDto.Name, bookDto.Author, bookDto.ISBN);
 
-            // Create command from DTO
             var command = new CreateBookCommand(
                 bookDto.Name,
                 bookDto.Author,
@@ -186,45 +152,10 @@ namespace ELibrary.Api.Controllers
 
             var result = await _bookService.HandleAsync(command);
 
-            if (result.IsFailure)
-            {
-                if (result.ErrorCode == ErrorCodes.DuplicateIsbn)
-                {
-                    return Conflict(new
-                    {
-                        error = "Duplicate ISBN",
-                        message = result.Error,
-                        errorCode = result.ErrorCode,
-                        isbn = bookDto.ISBN
-                    });
-                }
-
-                if (result.ErrorCode == ErrorCodes.ValidationError)
-                {
-                    return BadRequest(new
-                    {
-                        error = "Validation error",
-                        message = result.Error,
-                        errorCode = result.ErrorCode
-                    });
-                }
-
-                return StatusCode(500, new
-                {
-                    error = "Internal server error",
-                    message = result.Error,
-                    errorCode = result.ErrorCode
-                });
-            }
-
-            _logger.LogInformation(
-                "Book created successfully with ID: {BookId}",
-                result.Value!.ID);
-
-            return CreatedAtAction(
+            return result.ToCreatedResult(
+                this,
                 nameof(GetAllBooks),
-                new { id = result.Value.ID },
-                result.Value);
+                new { id = result.Value?.ID });
         }
 
         /// <summary>
@@ -263,55 +194,7 @@ namespace ELibrary.Api.Controllers
             var command = new BorrowBookCommand(bookId, customer);
             var result = await _bookService.HandleAsync(command);
 
-            if (result.IsFailure)
-            {
-                if (result.ErrorCode == ErrorCodes.NotFound)
-                {
-                    return NotFound(new
-                    {
-                        error = "Book not found",
-                        message = result.Error,
-                        errorCode = result.ErrorCode,
-                        bookId
-                    });
-                }
-
-                if (result.ErrorCode == ErrorCodes.OutOfStock)
-                {
-                    return BadRequest(new
-                    {
-                        error = "Out of stock",
-                        message = result.Error,
-                        errorCode = result.ErrorCode,
-                        bookId
-                    });
-                }
-
-                if (result.ErrorCode == ErrorCodes.ConcurrencyConflict)
-                {
-                    return Conflict(new
-                    {
-                        error = "Concurrency conflict",
-                        message = result.Error,
-                        errorCode = result.ErrorCode,
-                        bookId
-                    });
-                }
-
-                return StatusCode(500, new
-                {
-                    error = "Internal server error",
-                    message = result.Error,
-                    errorCode = result.ErrorCode,
-                    bookId
-                });
-            }
-
-            _logger.LogInformation(
-                "Book borrowed successfully. BookId: {BookId}, RemainingQuantity: {Quantity}",
-                bookId, result.Value!.ActualQuantity);
-
-            return Ok(result.Value);
+            return result.ToActionResult(this);
         }
 
         /// <summary>
@@ -350,44 +233,7 @@ namespace ELibrary.Api.Controllers
             var command = new ReturnBookCommand(bookId, customer);
             var result = await _bookService.HandleAsync(command);
 
-            if (result.IsFailure)
-            {
-                if (result.ErrorCode == ErrorCodes.NotFound)
-                {
-                    return NotFound(new
-                    {
-                        error = "Book not found",
-                        message = result.Error,
-                        errorCode = result.ErrorCode,
-                        bookId
-                    });
-                }
-
-                if (result.ErrorCode == ErrorCodes.ConcurrencyConflict)
-                {
-                    return Conflict(new
-                    {
-                        error = "Concurrency conflict",
-                        message = result.Error,
-                        errorCode = result.ErrorCode,
-                        bookId
-                    });
-                }
-
-                return StatusCode(500, new
-                {
-                    error = "Internal server error",
-                    message = result.Error,
-                    errorCode = result.ErrorCode,
-                    bookId
-                });
-            }
-
-            _logger.LogInformation(
-                "Book returned successfully. BookId: {BookId}, NewQuantity: {Quantity}",
-                bookId, result.Value!.ActualQuantity);
-
-            return Ok(result.Value);
+            return result.ToActionResult(this);
         }
     }
 }

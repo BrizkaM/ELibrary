@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using ELibrary.Api.Extensions;
 using ELibrary.Application.DTOs;
 using ELibrary.Application.Interfaces;
 using ELibrary.Application.Queries.BorrowRecords;
@@ -43,18 +44,7 @@ namespace ELibrary.Api.Controllers
             var query = new GetAllBorrowRecordsQuery();
             var result = await _borrowBookRecordService.HandleAsync(query);
 
-            if (result.IsFailure)
-            {
-                _logger.LogError("Failed to retrieve borrow book records: {Error}", result.Error);
-                return StatusCode(500, new
-                {
-                    error = "Internal server error",
-                    message = result.Error,
-                    errorCode = result.ErrorCode
-                });
-            }
-
-            return Ok(result.Value);
+            return result.ToActionResult(this);
         }
     }
 }

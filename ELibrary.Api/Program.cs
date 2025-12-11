@@ -80,6 +80,15 @@ try
 	// Application Layer (Services, AutoMapper, FluentValidation)
 	builder.Services.AddApplication();
 
+    // HEALTH CHECKS
+    builder.Services.AddHealthChecks()
+        .AddCheck("self", () =>
+            Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("API is running"))
+        .AddDbContextCheck<ELibraryDbContext>(
+            name: "database",
+            failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
+            tags: new[] { "db", "sql", "sqlite" });
+
     // Presentation Layer (Controllers, Swagger, CORS)
     builder.Services.AddPresentation(builder.Configuration, builder.Environment);
 
@@ -131,8 +140,43 @@ try
 		}
 	}
 
-	// Swagger UI
-	if (app.Environment.IsDevelopment())
+    // HEALTH CHECKS ENDPOINTS
+    app.MapHealthChecks("/health");
+
+    // Detailed health check with JSON response
+    app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = _ => true,
+        ResponseWriter = async (context, report) =>
+        {
+            context.Response.ContentType = "application/json";
+            var result = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                status = report.Status.ToString(),
+                checks = report.Entries.Select(e => new
+                {
+                    name = e.Key,
+                    status = e.Value.Status.ToString(),
+                    description = e.Value.Description,
+                    duration = e.Value.Duration.TotalMilliseconds
+                }),
+                totalDuration = report.TotalDuration.TotalMilliseconds
+            });
+            await context.Response.WriteAsync(result);
+        }
+    });
+
+    // Liveness check (lightweight)
+    app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("self") || check.Name == "self"
+    });
+
+    Log.Information("Health check endpoints configured: /health, /health/ready, /health/live");
+
+
+    // Swagger UI
+    if (app.Environment.IsDevelopment())
 	{
 		Log.Information("Starting in Development mode - Swagger UI enabled");
 
