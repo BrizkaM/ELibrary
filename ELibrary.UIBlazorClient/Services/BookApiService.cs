@@ -1,6 +1,5 @@
 using ELibrary.Application.DTOs;
 
-
 namespace ELibrary.UIBlazorClient.Services
 {
     public class BookApiService
@@ -33,17 +32,30 @@ namespace ELibrary.UIBlazorClient.Services
         {
             try
             {
-                var query = new List<string>();
-                if (!string.IsNullOrWhiteSpace(name))
-                    query.Add($"name={Uri.EscapeDataString(name)}");
-                if (!string.IsNullOrWhiteSpace(author))
-                    query.Add($"author={Uri.EscapeDataString(author)}");
-                if (!string.IsNullOrWhiteSpace(isbn))
-                    query.Add($"isbn={Uri.EscapeDataString(isbn)}");
+                // ✅ OPRAVENO: POST s JSON body místo GET s query string
+                var query = new SearchBooksQuery
+                {
+                    Name = name,
+                    Author = author,
+                    ISBN = isbn
+                };
 
-                var queryString = query.Count > 0 ? "?" + string.Join("&", query) : "";
-                var books = await _httpClient.GetFromJsonAsync<List<BookDto>>($"{ApiPrefix}/Book/search{queryString}");
-                return books ?? new List<BookDto>();
+                var response = await _httpClient.PostAsJsonAsync($"{ApiPrefix}/Book/search", query);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var books = await response.Content.ReadFromJsonAsync<List<BookDto>>();
+                    return books ?? new List<BookDto>();
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return new List<BookDto>();
+                }
+                else
+                {
+                    _logger.LogWarning("Search failed with status {StatusCode}", response.StatusCode);
+                    return new List<BookDto>();
+                }
             }
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
@@ -60,7 +72,7 @@ namespace ELibrary.UIBlazorClient.Services
         {
             try
             {
-                // ✅ OPRAVENO: PostAsJsonAsync místo PostAsync s query string
+                // ✅ OPRAVENO: PostAsJsonAsync s command object
                 var command = new BorrowBookCommand
                 {
                     BookId = bookId,
@@ -90,7 +102,7 @@ namespace ELibrary.UIBlazorClient.Services
         {
             try
             {
-                // ✅ OPRAVENO: PostAsJsonAsync místo PostAsync s query string
+                // ✅ OPRAVENO: PostAsJsonAsync s command object
                 var command = new ReturnBookCommand
                 {
                     BookId = bookId,
@@ -152,6 +164,20 @@ namespace ELibrary.UIBlazorClient.Services
                 return (false, $"Chyba: {ex.Message}");
             }
         }
+    }
+
+    // ============================================================
+    // COMMAND & QUERY DTOs
+    // ============================================================
+
+    /// <summary>
+    /// Query pro vyhledávání knih (musí odpovídat API)
+    /// </summary>
+    public class SearchBooksQuery
+    {
+        public string? Name { get; set; }
+        public string? Author { get; set; }
+        public string? ISBN { get; set; }
     }
 
     /// <summary>

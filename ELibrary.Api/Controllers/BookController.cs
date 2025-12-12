@@ -50,28 +50,22 @@ namespace ELibrary.Api.Controllers
             return result.ToActionResult(this);
         }
 
-        /// <summary>
-        /// Searches for books using specified criteria
-        /// </summary>
-        [HttpGet("search")]
+        // BookController.cs
+        [HttpPost("search")]
         [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<BookDto>>> SearchBooks(
-            [FromQuery] string? name,
-            [FromQuery] string? author,
-            [FromQuery] string? isbn)
+        public async Task<ActionResult<IEnumerable<BookDto>>> SearchBooks([FromBody] SearchBooksQuery query)
         {
-            var query = new SearchBooksQuery(name, author, isbn);
-
             _logger.LogInformation(
-                "GET /api/v1/book/search - Searching: Name={Name}, Author={Author}, ISBN={ISBN}",
-                name ?? "null", author ?? "null", isbn ?? "null");
+                "POST /api/v1/book/search - Searching: Name={Name}, Author={Author}, ISBN={ISBN}",
+                query.Name ?? "null", query.Author ?? "null", query.ISBN ?? "null");
 
             var result = await _bookService.HandleAsync(query);
 
             return result.ToActionResult(this);
         }
+
 
         // ============================================================
         // COMMAND ENDPOINTS (Write Operations)

@@ -19,27 +19,21 @@ public class SearchBooksQueryValidator : AbstractValidator<SearchBooksQuery>
         {
             RuleFor(x => x.Name)
                 .MaximumLength(1000)
-                .WithMessage("Book name cannot exceed 1000 characters")
-                .MinimumLength(2)
-                .WithMessage("Book name must be at least 2 characters");
+                .WithMessage("Book name cannot exceed 1000 characters");
         });
 
         When(x => !string.IsNullOrWhiteSpace(x.Author), () =>
         {
             RuleFor(x => x.Author)
                 .MaximumLength(1000)
-                .WithMessage("Author name cannot exceed 1000 characters")
-                .MinimumLength(2)
-                .WithMessage("Author name must be at least 2 characters");
+                .WithMessage("Author name cannot exceed 1000 characters");
         });
 
         When(x => !string.IsNullOrWhiteSpace(x.ISBN), () =>
         {
             RuleFor(x => x.ISBN)
                 .MaximumLength(1000)
-                .WithMessage("ISBN cannot exceed 1000 characters")
-                .MinimumLength(10)
-                .WithMessage("ISBN must be at least 10 characters");
+                .WithMessage("ISBN cannot exceed 1000 characters");
         });
     }
 }
