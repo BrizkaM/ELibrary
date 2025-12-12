@@ -56,16 +56,19 @@ namespace ELibrary.UIBlazorClient.Services
             }
         }
 
-        public async Task<(bool Success, string Message)> BorrowBookAsync(Guid bookId, string? customerName)
+        public async Task<(bool Success, string Message)> BorrowBookAsync(Guid bookId, string customerName)
         {
             try
             {
-                var query = $"?bookId={bookId}";
-                if (!string.IsNullOrWhiteSpace(customerName))
-                    query += $"&customerName={Uri.EscapeDataString(customerName)}";
+                // ✅ OPRAVENO: PostAsJsonAsync místo PostAsync s query string
+                var command = new BorrowBookCommand
+                {
+                    BookId = bookId,
+                    CustomerName = string.IsNullOrWhiteSpace(customerName) ? "anonym" : customerName
+                };
 
-                var response = await _httpClient.PostAsync($"{ApiPrefix}/Book/borrow{query}", null);
-                
+                var response = await _httpClient.PostAsJsonAsync($"{ApiPrefix}/Book/borrow", command);
+
                 if (response.IsSuccessStatusCode)
                 {
                     return (true, "Kniha byla úspěšně půjčena.");
@@ -83,16 +86,19 @@ namespace ELibrary.UIBlazorClient.Services
             }
         }
 
-        public async Task<(bool Success, string Message)> ReturnBookAsync(Guid bookId, string? customerName)
+        public async Task<(bool Success, string Message)> ReturnBookAsync(Guid bookId, string customerName)
         {
             try
             {
-                var query = $"?bookId={bookId}";
-                if (!string.IsNullOrWhiteSpace(customerName))
-                    query += $"&customerName={Uri.EscapeDataString(customerName)}";
+                // ✅ OPRAVENO: PostAsJsonAsync místo PostAsync s query string
+                var command = new ReturnBookCommand
+                {
+                    BookId = bookId,
+                    CustomerName = string.IsNullOrWhiteSpace(customerName) ? "anonym" : customerName
+                };
 
-                var response = await _httpClient.PostAsync($"{ApiPrefix}/Book/return{query}", null);
-                
+                var response = await _httpClient.PostAsJsonAsync($"{ApiPrefix}/Book/return", command);
+
                 if (response.IsSuccessStatusCode)
                 {
                     return (true, "Kniha byla úspěšně vrácena.");
@@ -129,7 +135,7 @@ namespace ELibrary.UIBlazorClient.Services
             try
             {
                 var response = await _httpClient.PostAsJsonAsync($"{ApiPrefix}/Book", bookDto);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     return (true, "Kniha byla úspěšně vytvořena.");
@@ -146,5 +152,23 @@ namespace ELibrary.UIBlazorClient.Services
                 return (false, $"Chyba: {ex.Message}");
             }
         }
+    }
+
+    /// <summary>
+    /// Command pro půjčení knihy (musí odpovídat API)
+    /// </summary>
+    public class BorrowBookCommand
+    {
+        public Guid BookId { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Command pro vrácení knihy (musí odpovídat API)
+    /// </summary>
+    public class ReturnBookCommand
+    {
+        public Guid BookId { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
     }
 }

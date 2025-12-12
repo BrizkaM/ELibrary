@@ -30,24 +30,14 @@ namespace ELibrary.Application.Services
         /// </summary>
         public async Task<ELibraryResult<IEnumerable<BorrowBookRecordDto>>> HandleAsync(GetAllBorrowRecordsQuery query)
         {
-            try
-            {
-                _logger.LogInformation("Handling GetAllBorrowRecordsQuery");
+            _logger.LogInformation("Handling GetAllBorrowRecordsQuery");
 
-                var entities = await _unitOfWork.BorrowRecords.GetAllAsync();
-                var dtos = entities.Select(e => _mapper.Map<BorrowBookRecordDto>(e));
+            var entities = await _unitOfWork.BorrowRecords.GetAllAsync();
+            var dtos = entities.Select(e => _mapper.Map<BorrowBookRecordDto>(e));
 
-                _logger.LogInformation("Retrieved {Count} borrow book records", dtos.Count());
+            _logger.LogInformation("Retrieved {Count} borrow book records", dtos.Count());
 
-                return ELibraryResult<IEnumerable<BorrowBookRecordDto>>.Success(dtos);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling GetAllBorrowRecordsQuery");
-                return ELibraryResult<IEnumerable<BorrowBookRecordDto>>.Failure(
-                    "An error occurred while retrieving borrow book records",
-                    ErrorCodes.InvalidOperation);
-            }
+            return ELibraryResult<IEnumerable<BorrowBookRecordDto>>.Success(dtos);
         }
     }
 }

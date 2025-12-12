@@ -82,10 +82,6 @@ namespace ELibrary.Api.Controllers
         /// </summary>
         /// <param name="command">The create book command</param>
         /// <returns>The created book</returns>
-        /// <response code="201">Book created successfully</response>
-        /// <response code="400">Invalid book data or validation failed</response>
-        /// <response code="409">Book with same ISBN already exists</response>
-        /// <response code="500">Internal server error</response>
         [HttpPost]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
