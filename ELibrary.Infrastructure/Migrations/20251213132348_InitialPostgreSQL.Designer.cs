@@ -5,55 +5,63 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace ELibrary.Infrastructure.Migrations
 {
     [DbContext(typeof(ELibraryDbContext))]
-    [Migration("20251126124035_InitialWithSeed")]
-    partial class InitialWithSeed
+    [Migration("20251213132348_InitialPostgreSQL")]
+    partial class InitialPostgreSQL
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "9.0.10")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("ELibrary.Domain.Entities.Book", b =>
                 {
                     b.Property<Guid>("ID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("ActualQuantity")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Author")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("ISBN")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(1000)");
 
-                    b.Property<long>("RowVersion")
+                    b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
-                        .ValueGeneratedOnUpdate()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(0L);
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
 
                     b.Property<DateTime>("Year")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("ISBN")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Book_ISBN");
 
                     b.ToTable("Books");
 
@@ -65,7 +73,6 @@ namespace ELibrary.Infrastructure.Migrations
                             Author = "Christopher Ruocchio",
                             ISBN = "9780756419264",
                             Name = "Empire of Silence",
-                            RowVersion = 0L,
                             Year = new DateTime(2018, 1, 1, 1, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -75,7 +82,6 @@ namespace ELibrary.Infrastructure.Migrations
                             Author = "Christopher Ruocchio",
                             ISBN = "9780756419271",
                             Name = "Howling Dark",
-                            RowVersion = 0L,
                             Year = new DateTime(2019, 1, 1, 1, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
@@ -85,7 +91,6 @@ namespace ELibrary.Infrastructure.Migrations
                             Author = "Christopher Ruocchio",
                             ISBN = "9780756419288",
                             Name = "Demon in white",
-                            RowVersion = 0L,
                             Year = new DateTime(2020, 11, 24, 1, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
@@ -94,23 +99,23 @@ namespace ELibrary.Infrastructure.Migrations
                 {
                     b.Property<Guid>("ID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<Guid>("BookID")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CustomerName")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime>("Date")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ID");
 

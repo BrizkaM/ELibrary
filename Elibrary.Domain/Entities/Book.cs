@@ -48,8 +48,9 @@ namespace ELibrary.Domain.Entities
 
         /// <summary>
         /// Row version for concurrency control.
+        /// PostgreSQL uses xmin system column automatically.
         /// </summary>
-        /// <remarks>Manualy handled due to SQLite. Not testes due to SQLite.</remarks>
-        public long RowVersion { get; set; }
+        [Timestamp]
+        public byte[]? RowVersion { get; set; }
     }
 }

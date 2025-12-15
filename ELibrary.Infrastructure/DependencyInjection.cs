@@ -26,7 +26,7 @@ namespace ELibrary.Infrastructure
                                    ?? "Data Source=ELibrary.db";
 
             services.AddDbContext<ELibraryDbContext>(options =>
-                options.UseSqlite(
+                options.UseNpgsql(
                     connectionString,
                     b => b.MigrationsAssembly("ELibrary.Infrastructure")));
 

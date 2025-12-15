@@ -31,7 +31,7 @@ public class ELibraryDbContextFactory : IDesignTimeDbContextFactory<ELibraryDbCo
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         var builder = new DbContextOptionsBuilder<ELibraryDbContext>();
-        builder.UseSqlite(connectionString);
+        builder.UseNpgsql(connectionString);
 
         return new ELibraryDbContext(builder.Options);
     }

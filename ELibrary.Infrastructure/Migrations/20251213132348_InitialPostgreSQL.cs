@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -7,7 +8,7 @@
 namespace ELibrary.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialWithSeed : Migration
+    public partial class InitialPostgreSQL : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,40 +17,28 @@ namespace ELibrary.Infrastructure.Migrations
                 name: "Books",
                 columns: table => new
                 {
-                    ID = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
-                    Author = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
-                    Year = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    ISBN = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
-                    ActualQuantity = table.Column<int>(type: "INTEGER", nullable: false),
-                    RowVersion = table.Column<long>(type: "INTEGER", nullable: false, defaultValue: 0L)
+                    ID = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    Author = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    Year = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ISBN = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    ActualQuantity = table.Column<int>(type: "integer", nullable: false),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Books", x => x.ID);
                 });
 
-            // Becauseof SQLite limitations with concurrency tokens, we use a trigger to increment RowVersion on each update
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER update_book_rowversion 
-                AFTER UPDATE ON Books
-                FOR EACH ROW
-                BEGIN
-                    UPDATE Books 
-                    SET RowVersion = RowVersion + 1 
-                    WHERE ID = NEW.ID;
-                END;
-            ");
-
             migrationBuilder.CreateTable(
                 name: "BorrowBookRecords",
                 columns: table => new
                 {
-                    ID = table.Column<Guid>(type: "TEXT", nullable: false),
-                    BookID = table.Column<Guid>(type: "TEXT", nullable: false),
-                    CustomerName = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
-                    Action = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    Date = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    ID = table.Column<Guid>(type: "uuid", nullable: false),
+                    BookID = table.Column<Guid>(type: "uuid", nullable: false),
+                    CustomerName = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    Action = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -73,6 +62,12 @@ namespace ELibrary.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Book_ISBN",
+                table: "Books",
+                column: "ISBN",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_BorrowBookRecords_BookID",
                 table: "BorrowBookRecords",
                 column: "BookID");
@@ -83,9 +78,6 @@ namespace ELibrary.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "BorrowBookRecords");
-
-            // Because of SQLite limitations with concurrency tokens, we used a trigger to increment RowVersion on each update
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS update_book_rowversion;");
 
             migrationBuilder.DropTable(
                 name: "Books");

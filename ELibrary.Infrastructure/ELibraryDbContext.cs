@@ -58,9 +58,7 @@ public class ELibraryDbContext : DbContext
                 .IsRequired();
 
             entity.Property(e => e.RowVersion)
-                .IsConcurrencyToken()
-                .ValueGeneratedOnUpdate()
-                .HasDefaultValue(0L);
+                .IsRowVersion();
 
             entity.HasIndex(e => e.ISBN)
                 .IsUnique()
