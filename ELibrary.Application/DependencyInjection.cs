@@ -1,19 +1,17 @@
 ﻿using System.Reflection;
-using ELibrary.Application.Interfaces;
-using ELibrary.Application.Services;
+using ELibrary.Application.Behaviors;
 using FluentValidation;
-using FluentValidation.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ELibrary.Application
 {
     /// <summary>
-    /// Dependency injection configuration for Application layer.
+    /// Dependency injection configuration for Application layer with MediatR.
     /// </summary>
     public static class DependencyInjection
     {
         /// <summary>
-        /// Registers Application layer services.
+        /// Registers Application layer services including MediatR, AutoMapper, and FluentValidation.
         /// </summary>
         /// <param name="services">The service collection.</param>
         /// <returns>The service collection for chaining.</returns>
@@ -21,19 +19,32 @@ namespace ELibrary.Application
         {
             var assembly = Assembly.GetExecutingAssembly();
 
-            // Application Services
-            services.AddScoped<IBookService, BookService>();
-            services.AddScoped<IBorrowBookRecordService, BorrowBookRecordService>();
+            // MediatR - Register all handlers and behaviors from assembly
+            services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssembly(assembly);
 
-            // AutoMapper - scans assembly containing BookService type
+                // Register Pipeline Behaviors (order matters!)
+                // 1. Logging (first - log everything)
+                cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+
+                // 2. Validation (validate before processing)
+                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+
+                // 3. Performance (monitor performance)
+                cfg.AddOpenBehavior(typeof(PerformanceBehavior<,>));
+
+                // 4. Transaction (wrap Commands in transactions)
+                cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
+            });
+
+            // AutoMapper - scans assembly for mapping profiles
             services.AddAutoMapper(cfg =>
             {
                 cfg.AddMaps(assembly);
             });
 
-            // FluentValidation
-            services.AddFluentValidationAutoValidation();
-            services.AddFluentValidationClientsideAdapters();
+            // FluentValidation - Automatic validation for Commands and Queries
             services.AddValidatorsFromAssembly(assembly);
 
             return services;

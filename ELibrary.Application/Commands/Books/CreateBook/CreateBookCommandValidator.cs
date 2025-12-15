@@ -1,7 +1,6 @@
-﻿using ELibrary.Application.Commands.Books;
-using FluentValidation;
+﻿using FluentValidation;
 
-namespace ELibrary.Application.Validators.Commands
+namespace ELibrary.Application.Commands.Books.CreateBook
 {
     /// <summary>
     /// Validator for CreateBookCommand
@@ -67,7 +66,7 @@ namespace ELibrary.Application.Validators.Commands
             {
                 // All digits OR first 9 digits + X at the end
                 return cleanIsbn.All(char.IsDigit) ||
-                       (cleanIsbn.Take(9).All(char.IsDigit) && cleanIsbn[9] == 'X');
+                       cleanIsbn.Take(9).All(char.IsDigit) && cleanIsbn[9] == 'X';
             }
 
             // ISBN-13: 13 digits

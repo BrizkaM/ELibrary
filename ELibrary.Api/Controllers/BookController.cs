@@ -1,17 +1,20 @@
 using Asp.Versioning;
 using ELibrary.Api.Extensions;
-using ELibrary.Application.Commands.Books;
+using ELibrary.Application.Commands.Books.BorrowBook;
+using ELibrary.Application.Commands.Books.CreateBook;
+using ELibrary.Application.Commands.Books.ReturnBook;
 using ELibrary.Application.DTOs;
-using ELibrary.Application.Interfaces;
-using ELibrary.Application.Queries.Books;
+using ELibrary.Application.Queries.Books.GetAllBooks;
+using ELibrary.Application.Queries.Books.SearchBooks;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ELibrary.Api.Controllers
 {
     /// <summary>
-    /// API Controller for managing books in the library using CQRS pattern.
+    /// API Controller for managing books in the library using MediatR and CQRS pattern.
     /// Separates read operations (Queries) from write operations (Commands).
-    /// Controllers now accept Commands/Queries directly for proper FluentValidation.
+    /// Uses MediatR for clean separation of concerns and pipeline behaviors.
     /// </summary>
     [ApiController]
     [ApiVersion("1.0")]
@@ -19,15 +22,15 @@ namespace ELibrary.Api.Controllers
     [Produces("application/json")]
     public class BookController : ControllerBase
     {
-        private readonly IBookService _bookService;
+        private readonly IMediator _mediator;
         private readonly ILogger<BookController> _logger;
 
         public BookController(
-            IBookService bookService,
+            IMediator mediator,
             ILogger<BookController> logger)
         {
-            _bookService = bookService;
-            _logger = logger;
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         // ============================================================
@@ -37,6 +40,9 @@ namespace ELibrary.Api.Controllers
         /// <summary>
         /// Gets all books in the library
         /// </summary>
+        /// <returns>Collection of all books</returns>
+        /// <response code="200">Returns the list of books</response>
+        /// <response code="500">Internal server error</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -45,12 +51,19 @@ namespace ELibrary.Api.Controllers
             _logger.LogInformation("GET /api/v1/book - Retrieving all books");
 
             var query = new GetAllBooksQuery();
-            var result = await _bookService.HandleAsync(query);
+            var result = await _mediator.Send(query);
 
             return result.ToActionResult(this);
         }
 
-        // BookController.cs
+        /// <summary>
+        /// Searches books by name, author, or ISBN
+        /// </summary>
+        /// <param name="query">Search criteria</param>
+        /// <returns>Collection of matching books</returns>
+        /// <response code="200">Returns matching books</response>
+        /// <response code="400">Invalid search criteria</response>
+        /// <response code="500">Internal server error</response>
         [HttpPost("search")]
         [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -61,11 +74,10 @@ namespace ELibrary.Api.Controllers
                 "POST /api/v1/book/search - Searching: Name={Name}, Author={Author}, ISBN={ISBN}",
                 query.Name ?? "null", query.Author ?? "null", query.ISBN ?? "null");
 
-            var result = await _bookService.HandleAsync(query);
+            var result = await _mediator.Send(query);
 
             return result.ToActionResult(this);
         }
-
 
         // ============================================================
         // COMMAND ENDPOINTS (Write Operations)
@@ -76,6 +88,10 @@ namespace ELibrary.Api.Controllers
         /// </summary>
         /// <param name="command">The create book command</param>
         /// <returns>The created book</returns>
+        /// <response code="201">Book created successfully</response>
+        /// <response code="400">Invalid book data</response>
+        /// <response code="409">Book with same ISBN already exists</response>
+        /// <response code="500">Internal server error</response>
         [HttpPost]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -83,13 +99,11 @@ namespace ELibrary.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<BookDto>> CreateBook([FromBody] CreateBookCommand command)
         {
-            // FluentValidation automatically validates command here!
-
             _logger.LogInformation(
                 "POST /api/v1/book - Creating book: Name={Name}, Author={Author}, ISBN={ISBN}",
                 command.Name, command.Author, command.ISBN);
 
-            var result = await _bookService.HandleAsync(command);
+            var result = await _mediator.Send(command);
 
             return result.ToCreatedResult(
                 this,
@@ -98,8 +112,15 @@ namespace ELibrary.Api.Controllers
         }
 
         /// <summary>
-        /// Borrows a book to a customer
+        /// Borrows a book from the library
         /// </summary>
+        /// <param name="command">The borrow book command</param>
+        /// <returns>The updated book</returns>
+        /// <response code="200">Book borrowed successfully</response>
+        /// <response code="400">Invalid request data</response>
+        /// <response code="404">Book not found</response>
+        /// <response code="409">Book out of stock or concurrency conflict</response>
+        /// <response code="500">Internal server error</response>
         [HttpPost("borrow")]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -108,20 +129,25 @@ namespace ELibrary.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<BookDto>> BorrowBook([FromBody] BorrowBookCommand command)
         {
-            // FluentValidation automatically validates command here!
-
             _logger.LogInformation(
                 "POST /api/v1/book/borrow - Customer {CustomerName} borrowing book {BookId}",
                 command.CustomerName, command.BookId);
 
-            var result = await _bookService.HandleAsync(command);
+            var result = await _mediator.Send(command);
 
             return result.ToActionResult(this);
         }
 
         /// <summary>
-        /// Returns a borrowed book
+        /// Returns a borrowed book to the library
         /// </summary>
+        /// <param name="command">The return book command</param>
+        /// <returns>The updated book</returns>
+        /// <response code="200">Book returned successfully</response>
+        /// <response code="400">Invalid request data</response>
+        /// <response code="404">Book not found</response>
+        /// <response code="409">Concurrency conflict</response>
+        /// <response code="500">Internal server error</response>
         [HttpPost("return")]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -130,13 +156,11 @@ namespace ELibrary.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<BookDto>> ReturnBook([FromBody] ReturnBookCommand command)
         {
-            // FluentValidation automatically validates command here!
-
             _logger.LogInformation(
                 "POST /api/v1/book/return - Customer {CustomerName} returning book {BookId}",
                 command.CustomerName, command.BookId);
 
-            var result = await _bookService.HandleAsync(command);
+            var result = await _mediator.Send(command);
 
             return result.ToActionResult(this);
         }

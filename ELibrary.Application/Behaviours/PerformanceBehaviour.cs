@@ -1,0 +1,54 @@
+﻿using System.Diagnostics;
+using MediatR;
+using Microsoft.Extensions.Logging;
+
+namespace ELibrary.Application.Behaviors
+{
+    /// <summary>
+    /// Pipeline behavior that monitors request performance.
+    /// Logs a warning if a request takes longer than the threshold (500ms by default).
+    /// </summary>
+    /// <typeparam name="TRequest">The request type</typeparam>
+    /// <typeparam name="TResponse">The response type</typeparam>
+    public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : IRequest<TResponse>
+    {
+        private readonly Stopwatch _timer;
+        private readonly ILogger<PerformanceBehavior<TRequest, TResponse>> _logger;
+        private const int PerformanceThresholdMs = 500;
+
+        public PerformanceBehavior(ILogger<PerformanceBehavior<TRequest, TResponse>> logger)
+        {
+            _timer = new Stopwatch();
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        public async Task<TResponse> Handle(
+            TRequest request,
+            RequestHandlerDelegate<TResponse> next,
+            CancellationToken cancellationToken)
+        {
+            _timer.Start();
+
+            var response = await next();
+
+            _timer.Stop();
+
+            var elapsedMilliseconds = _timer.ElapsedMilliseconds;
+
+            // Log warning if request took longer than threshold
+            if (elapsedMilliseconds > PerformanceThresholdMs)
+            {
+                var requestName = typeof(TRequest).Name;
+
+                _logger.LogWarning(
+                    "Long Running Request: {RequestName} ({ElapsedMilliseconds}ms) exceeded threshold of {ThresholdMs}ms",
+                    requestName,
+                    elapsedMilliseconds,
+                    PerformanceThresholdMs);
+            }
+
+            return response;
+        }
+    }
+}

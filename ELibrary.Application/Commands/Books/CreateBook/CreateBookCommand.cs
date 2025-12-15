@@ -1,8 +1,13 @@
-﻿namespace ELibrary.Application.Commands.Books
+﻿using ELibrary.Application.Common;
+using ELibrary.Application.DTOs;
+using MediatR;
+
+namespace ELibrary.Application.Commands.Books.CreateBook
 {
     /// <summary>
     /// Command for creating a new book in the library.
     /// Represents an intent to add a new book to the catalog.
+    /// Implements IRequest to work with MediatR pipeline.
     /// </summary>
     /// <param name="Name">The title of the book</param>
     /// <param name="Author">The author of the book</param>
@@ -15,5 +20,5 @@
         DateTime Year,
         string ISBN,
         int ActualQuantity
-    );
+    ) : IRequest<ELibraryResult<BookDto>>;
 }

@@ -1,14 +1,13 @@
-﻿using ELibrary.Application.Commands.Books;
-using FluentValidation;
+﻿using FluentValidation;
 
-namespace ELibrary.Application.Validators.Commands
+namespace ELibrary.Application.Commands.Books.BorrowBook
 {
     /// <summary>
-    /// Validator for ReturnBookCommand
+    /// Validator for BorrowBookCommand
     /// </summary>
-    public class ReturnBookCommandValidator : AbstractValidator<ReturnBookCommand>
+    public class BorrowBookCommandValidator : AbstractValidator<BorrowBookCommand>
     {
-        public ReturnBookCommandValidator()
+        public BorrowBookCommandValidator()
         {
             RuleFor(x => x.BookId)
                 .NotEmpty()

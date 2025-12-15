@@ -1,4 +1,4 @@
-﻿using ELibrary.Application.Queries.Books;
+﻿using ELibrary.Application.Queries.Books.SearchBooks;
 using FluentValidation;
 
 /// <summary>

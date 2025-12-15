@@ -1,34 +1,36 @@
 ﻿using AutoMapper;
 using ELibrary.Application.Common;
 using ELibrary.Application.DTOs;
-using ELibrary.Application.Interfaces;
-using ELibrary.Application.Queries.BorrowRecords;
 using ELibrary.Domain.Interfaces;
+using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace ELibrary.Application.Services
+namespace ELibrary.Application.Queries.BorrowRecords.GetAllBorrowRecords
 {
     /// <summary>
-    /// Borrow book record service implementation using CQRS pattern.
-    /// Handles queries for borrow/return history.
+    /// Handler for GetAllBorrowRecordsQuery.
+    /// Retrieves all borrow/return records from the library.
     /// </summary>
-    public class BorrowBookRecordService : IBorrowBookRecordService
+    public class GetAllBorrowRecordsQueryHandler
+        : IRequestHandler<GetAllBorrowRecordsQuery, ELibraryResult<IEnumerable<BorrowBookRecordDto>>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly ILogger<BorrowBookRecordService> _logger;
         private readonly IMapper _mapper;
+        private readonly ILogger<GetAllBorrowRecordsQueryHandler> _logger;
 
-        public BorrowBookRecordService(IUnitOfWork unitOfWork, ILogger<BorrowBookRecordService> logger, IMapper mapper)
+        public GetAllBorrowRecordsQueryHandler(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            ILogger<GetAllBorrowRecordsQueryHandler> logger)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <summary>
-        /// Handles GetAllBorrowRecordsQuery to retrieve all borrow/return records.
-        /// </summary>
-        public async Task<ELibraryResult<IEnumerable<BorrowBookRecordDto>>> HandleAsync(GetAllBorrowRecordsQuery query)
+        public async Task<ELibraryResult<IEnumerable<BorrowBookRecordDto>>> Handle(
+            GetAllBorrowRecordsQuery request,
+            CancellationToken cancellationToken)
         {
             _logger.LogInformation("Handling GetAllBorrowRecordsQuery");
 
