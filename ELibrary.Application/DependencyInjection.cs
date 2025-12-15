@@ -34,7 +34,10 @@ namespace ELibrary.Application
                 // 3. Performance (monitor performance)
                 cfg.AddOpenBehavior(typeof(PerformanceBehavior<,>));
 
-                // 4. Transaction (wrap Commands in transactions)
+                // 4. Retry (retry on concurrency conflicts - BEFORE transaction)
+                cfg.AddOpenBehavior(typeof(RetryBehavior<,>));
+
+                // 5. Transaction (wrap Commands in transactions - LAST)
                 cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
             });
 
