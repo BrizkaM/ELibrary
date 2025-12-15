@@ -12,7 +12,8 @@ namespace ELibrary.Application.Commands.Books.ReturnBook
     /// <summary>
     /// Handler for ReturnBookCommand.
     /// Processes the command to return a book and create a return record.
-    /// Uses transaction to ensure data consistency.
+    /// Transaction management is handled by TransactionBehavior pipeline.
+    /// General logging is handled by LoggingBehavior pipeline.
     /// </summary>
     public class ReturnBookCommandHandler : IRequestHandler<ReturnBookCommand, ELibraryResult<BookDto>>
     {
@@ -34,61 +35,44 @@ namespace ELibrary.Application.Commands.Books.ReturnBook
             ReturnBookCommand request,
             CancellationToken cancellationToken)
         {
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            // Get the book
+            var book = await _unitOfWork.Books.GetByIdAsync(request.BookId);
 
-            try
+            if (book == null)
             {
-                _logger.LogInformation(
-                    "Handling ReturnBookCommand: BookId={BookId}, Customer={CustomerName}",
+                // Log business-specific warning
+                _logger.LogWarning(
+                    "Book not found: BookId={BookId}, ReturnedBy={Customer}",
                     request.BookId, request.CustomerName);
 
-                // Get the book
-                var book = await _unitOfWork.Books.GetByIdAsync(request.BookId);
-
-                if (book == null)
-                {
-                    await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                    _logger.LogWarning(
-                        "ReturnBookCommand failed: Book not found. BookId={BookId}",
-                        request.BookId);
-
-                    return ELibraryResult<BookDto>.Failure(
-                        $"Book with ID {request.BookId} not found",
-                        ErrorCodes.NotFound);
-                }
-
-                // Increase quantity
-                book.ActualQuantity += 1;
-                _unitOfWork.Books.Update(book);
-
-                // Create return record
-                var bookRecord = new BorrowBookRecord
-                {
-                    BookID = request.BookId,
-                    Book = book,
-                    CustomerName = request.CustomerName,
-                    Action = BookActionType.Returned.ToString(),
-                    Date = DateTime.UtcNow
-                };
-
-                await _unitOfWork.BorrowRecords.AddAsync(bookRecord);
-
-                // Save changes and commit transaction
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-                await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-                _logger.LogInformation(
-                    "ReturnBookCommand succeeded. BookId={BookId}, Customer={CustomerName}, NewQuantity={Quantity}",
-                    request.BookId, request.CustomerName, book.ActualQuantity);
-
-                return ELibraryResult<BookDto>.Success(_mapper.Map<BookDto>(book));
+                return ELibraryResult<BookDto>.Failure(
+                    $"Book with ID {request.BookId} not found",
+                    ErrorCodes.NotFound);
             }
-            catch (Exception ex)
+
+            // Increase quantity
+            book.ActualQuantity += 1;
+            _unitOfWork.Books.Update(book);
+
+            // Create return record
+            var bookRecord = new BorrowBookRecord
             {
-                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                _logger.LogError(ex, "ReturnBookCommand failed with exception");
-                throw;
-            }
+                BookID = request.BookId,
+                Book = book,
+                CustomerName = request.CustomerName,
+                Action = BookActionType.Returned.ToString(),
+                Date = DateTime.UtcNow
+            };
+
+            await _unitOfWork.BorrowRecords.AddAsync(bookRecord);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Log important business event with specific details
+            _logger.LogInformation(
+                "Book returned successfully: BookId={BookId}, Title={Title}, Customer={Customer}, NewStock={NewStock}",
+                request.BookId, book.Name, request.CustomerName, book.ActualQuantity);
+
+            return ELibraryResult<BookDto>.Success(_mapper.Map<BookDto>(book));
         }
     }
 }

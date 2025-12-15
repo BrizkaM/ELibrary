@@ -11,6 +11,8 @@ namespace ELibrary.Application.Commands.Books.CreateBook
     /// <summary>
     /// Handler for CreateBookCommand.
     /// Processes the command to create a new book in the library.
+    /// Transaction management is handled by TransactionBehavior pipeline.
+    /// General logging is handled by LoggingBehavior pipeline.
     /// </summary>
     public class CreateBookCommandHandler : IRequestHandler<CreateBookCommand, ELibraryResult<BookDto>>
     {
@@ -32,17 +34,15 @@ namespace ELibrary.Application.Commands.Books.CreateBook
             CreateBookCommand request,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation(
-                "Handling CreateBookCommand: Name={Name}, Author={Author}, ISBN={ISBN}",
-                request.Name, request.Author, request.ISBN);
-
             // Check for duplicate ISBN
             var existingISBN = await _unitOfWork.Books.GetByISBNAsync(request.ISBN);
+
             if (existingISBN != null)
             {
+                // Log business-specific warning
                 _logger.LogWarning(
-                    "CreateBookCommand failed: Duplicate ISBN={ISBN}",
-                    request.ISBN);
+                    "Duplicate ISBN detected: ISBN={ISBN}, ExistingBookId={ExistingBookId}",
+                    request.ISBN, existingISBN.ID);
 
                 return ELibraryResult<BookDto>.Failure(
                     $"Book with ISBN '{request.ISBN}' already exists",
@@ -62,9 +62,10 @@ namespace ELibrary.Application.Commands.Books.CreateBook
             var addedBook = await _unitOfWork.Books.AddAsync(book);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // Log important business event with specific details
             _logger.LogInformation(
-                "CreateBookCommand succeeded. BookId={BookId}, Title={Title}",
-                addedBook.ID, addedBook.Name);
+                "Book created successfully: BookId={BookId}, Title={Title}, Author={Author}, ISBN={ISBN}, InitialStock={Stock}",
+                addedBook.ID, addedBook.Name, addedBook.Author, addedBook.ISBN, addedBook.ActualQuantity);
 
             return ELibraryResult<BookDto>.Success(_mapper.Map<BookDto>(addedBook));
         }

@@ -31,8 +31,6 @@ namespace ELibrary.Application.Queries.Books.GetAllBooks
             GetAllBooksQuery request,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Handling GetAllBooksQuery");
-
             var entities = await _unitOfWork.Books.GetAllAsync();
             var dtos = entities.Select(e => _mapper.Map<BookDto>(e));
 
