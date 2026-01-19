@@ -46,12 +46,12 @@ namespace ELibrary.Api.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<BookDto>>> GetAllBooks()
+        public async Task<ActionResult<IEnumerable<BookDto>>> GetAllBooks(CancellationToken cancellationToken)
         {
             _logger.LogInformation("GET /api/v1/book - Retrieving all books");
 
             var query = new GetAllBooksQuery();
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(query, cancellationToken);
 
             return result.ToActionResult(this);
         }
@@ -68,13 +68,13 @@ namespace ELibrary.Api.Controllers
         [ProducesResponseType(typeof(IEnumerable<BookDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<BookDto>>> SearchBooks([FromBody] SearchBooksQuery query)
+        public async Task<ActionResult<IEnumerable<BookDto>>> SearchBooks([FromBody] SearchBooksQuery query, CancellationToken cancellationToken)
         {
             _logger.LogInformation(
                 "POST /api/v1/book/search - Searching: Name={Name}, Author={Author}, ISBN={ISBN}",
                 query.Name ?? "null", query.Author ?? "null", query.ISBN ?? "null");
 
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(query, cancellationToken);
 
             return result.ToActionResult(this);
         }
@@ -97,13 +97,13 @@ namespace ELibrary.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<BookDto>> CreateBook([FromBody] CreateBookCommand command)
+        public async Task<ActionResult<BookDto>> CreateBook([FromBody] CreateBookCommand command, CancellationToken cancellationToken)
         {
             _logger.LogInformation(
                 "POST /api/v1/book - Creating book: Name={Name}, Author={Author}, ISBN={ISBN}",
                 command.Name, command.Author, command.ISBN);
 
-            var result = await _mediator.Send(command);
+            var result = await _mediator.Send(command, cancellationToken);
 
             return result.ToCreatedResult(
                 this,
@@ -127,13 +127,13 @@ namespace ELibrary.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<BookDto>> BorrowBook([FromBody] BorrowBookCommand command)
+        public async Task<ActionResult<BookDto>> BorrowBook([FromBody] BorrowBookCommand command, CancellationToken cancellationToken)
         {
             _logger.LogInformation(
                 "POST /api/v1/book/borrow - Customer {CustomerName} borrowing book {BookId}",
                 command.CustomerName, command.BookId);
 
-            var result = await _mediator.Send(command);
+            var result = await _mediator.Send(command, cancellationToken);
 
             return result.ToActionResult(this);
         }
@@ -154,13 +154,13 @@ namespace ELibrary.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<BookDto>> ReturnBook([FromBody] ReturnBookCommand command)
+        public async Task<ActionResult<BookDto>> ReturnBook([FromBody] ReturnBookCommand command, CancellationToken cancellationToken)
         {
             _logger.LogInformation(
                 "POST /api/v1/book/return - Customer {CustomerName} returning book {BookId}",
                 command.CustomerName, command.BookId);
 
-            var result = await _mediator.Send(command);
+            var result = await _mediator.Send(command, cancellationToken);
 
             return result.ToActionResult(this);
         }

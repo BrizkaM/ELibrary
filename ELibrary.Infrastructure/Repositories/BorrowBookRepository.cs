@@ -22,17 +22,17 @@ namespace ELibrary.Infrastructure.Repositories
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<BorrowBookRecord>> GetAllAsync()
+        public async Task<IEnumerable<BorrowBookRecord>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _context.BorrowBookRecords
                 .OrderByDescending(b => b.Date)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task<BorrowBookRecord> AddAsync(BorrowBookRecord bookRecord)
+        public async Task<BorrowBookRecord> AddAsync(BorrowBookRecord bookRecord, CancellationToken cancellationToken = default)
         {
-            var entry = await _context.BorrowBookRecords.AddAsync(bookRecord);
+            var entry = await _context.BorrowBookRecords.AddAsync(bookRecord, cancellationToken);
             return entry.Entity;
         }
     }

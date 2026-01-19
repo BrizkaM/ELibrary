@@ -38,12 +38,12 @@ namespace ELibrary.Api.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<BorrowBookRecordDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<BorrowBookRecordDto>>> GetAllBorrowBookRecords()
+        public async Task<ActionResult<IEnumerable<BorrowBookRecordDto>>> GetAllBorrowBookRecords(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("GET /api/v1/borrowbookrecord - Retrieving all borrow book records");
 
             var query = new GetAllBorrowRecordsQuery();
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(query, cancellationToken);
 
             return result.ToActionResult(this);
         }

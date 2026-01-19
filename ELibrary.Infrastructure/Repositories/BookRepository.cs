@@ -19,28 +19,36 @@ namespace ELibrary.Infrastructure.Repositories
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<Book>> GetAllAsync()
+        public async Task<IEnumerable<Book>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _context.Books
                 .OrderByDescending(b => b.Author)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task<Book?> GetByIdAsync(Guid id)
+        public async Task<Book?> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
         {
-            return await _context.Books.FindAsync(id);
+            return await _context.Books.FindAsync(id, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task<Book?> GetByISBNAsync(string isbn)
+        public async Task<Book?> GetByISBNAsync(
+            string isbn,
+            CancellationToken cancellationToken = default)
         {
             return await _context.Books
-                .FirstOrDefaultAsync(b => b.ISBN == isbn);
+                .FirstOrDefaultAsync(b => b.ISBN == isbn, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<Book>> GetFilteredBooksAsync(string? name, string? author, string? isbn)
+        public async Task<IEnumerable<Book>> GetFilteredBooksAsync(
+            string? name,
+            string? author,
+            string? isbn,
+            CancellationToken cancellationToken = default)
         {
             var query = _context.Books.AsQueryable();
 
@@ -60,13 +68,13 @@ namespace ELibrary.Infrastructure.Repositories
             }
 
 
-            return await query.ToListAsync();
+            return await query.ToListAsync(cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task<Book> AddAsync(Book book)
+        public async Task<Book> AddAsync(Book book, CancellationToken cancellationToken = default)
         {
-            var entry = await _context.Books.AddAsync(book);
+            var entry = await _context.Books.AddAsync(book, cancellationToken);
             return entry.Entity;
         }
 
