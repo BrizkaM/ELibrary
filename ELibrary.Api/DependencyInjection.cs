@@ -51,12 +51,14 @@ namespace ELibrary.Api
             // CORS
             services.AddCors(options =>
             {
-                options.AddPolicy("AllowBlazorClient",
+                options.AddPolicy("AllowWebClients",
                     policy =>
                     {
                         policy.WithOrigins(
                                 "https://localhost:7002",
-                                "http://localhost:5002")
+                                "http://localhost:5002",
+                                "http://localhost:5173",
+                                "https://localhost:5173")
                               .AllowAnyHeader()
                               .AllowAnyMethod();
                     });

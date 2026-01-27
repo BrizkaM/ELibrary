@@ -98,7 +98,7 @@ try
     // MIDDLEWARE PIPELINE
     // ============================================================================
 
-    app.UseCors("AllowBlazorClient");
+    app.UseCors("AllowWebClients");
 
     // Serilog Request Logging
     app.UseSerilogRequestLogging(options =>
