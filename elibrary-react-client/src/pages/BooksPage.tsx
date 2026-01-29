@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useBooks } from "../hooks";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useBooks, useSearchBooks } from "../hooks";
 import {
   Card,
   CardContent,
@@ -9,6 +10,7 @@ import {
   CreateBookModal,
   BorrowBookModal,
   ReturnBookModal,
+  BookSearch,
 } from "../components";
 import {
   BookOpen,
@@ -17,13 +19,45 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
 } from "lucide-react";
-import type { Book } from "../types";
+import type { Book, SearchBooksQuery } from "../types";
+import { useTranslation } from "../store/languageStore";
 
 export function BooksPage() {
-  const { data: books, isLoading, error } = useBooks();
+  const { t, translate } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [borrowingBook, setBorrowingBook] = useState<Book | null>(null);
   const [returningBook, setReturningBook] = useState<Book | null>(null);
+  const [searchQuery, setSearchQuery] = useState<SearchBooksQuery | null>(null);
+
+  // Zachytí ?action=create z URL a otevře modal
+  useEffect(() => {
+    if (searchParams.get("action") === "create") {
+      setIsCreateModalOpen(true);
+      // Odstraní query param z URL
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
+
+  const allBooksQuery = useBooks();
+  const searchBooksQuery = useSearchBooks(
+    searchQuery ?? { name: "", author: "", isbn: "" },
+  );
+
+  const isSearching = searchQuery !== null;
+  const {
+    data: books,
+    isLoading,
+    error,
+  } = isSearching ? searchBooksQuery : allBooksQuery;
+
+  const handleSearch = (query: SearchBooksQuery) => {
+    setSearchQuery(query);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery(null);
+  };
 
   if (isLoading) {
     return (
@@ -38,7 +72,9 @@ export function BooksPage() {
       <div className="flex items-center justify-center py-12">
         <div className="flex items-center gap-2 text-red-600">
           <AlertCircle className="h-5 w-5" />
-          <span>Chyba při načítání knih: {error.message}</span>
+          <span>
+            {t.books.loadError}: {error.message}
+          </span>
         </div>
       </div>
     );
@@ -48,16 +84,27 @@ export function BooksPage() {
     <div>
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Knihy</h1>
-          <p className="mt-2 text-gray-600">
-            Celkem {books?.length || 0} knih v knihovně
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            {t.books.title}
+          </h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            {isSearching
+              ? translate(t.books.foundBooks, { count: books?.length || 0 })
+              : translate(t.books.totalBooks, { count: books?.length || 0 })}
           </p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Přidat knihu
+          {t.books.addBook}
         </Button>
       </div>
+
+      <BookSearch
+        onSearch={handleSearch}
+        onClear={handleClearSearch}
+        isSearching={isSearching}
+        activeQuery={searchQuery}
+      />
 
       {books && books.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -67,7 +114,7 @@ export function BooksPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <BookOpen className="h-6 w-6 text-blue-600" />
-                    <h3 className="font-semibold text-gray-900 line-clamp-1">
+                    <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1">
                       {book.name}
                     </h3>
                   </div>
@@ -75,14 +122,16 @@ export function BooksPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
-                  <p className="text-gray-600">
-                    <span className="font-medium">Autor:</span> {book.author}
+                  <p className="text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">{t.books.author}:</span>{" "}
+                    {book.author}
                   </p>
-                  <p className="text-gray-600">
-                    <span className="font-medium">ISBN:</span> {book.isbn}
+                  <p className="text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">{t.books.isbn}:</span>{" "}
+                    {book.isbn}
                   </p>
-                  <p className="text-gray-600">
-                    <span className="font-medium">Rok:</span>{" "}
+                  <p className="text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">{t.books.year}:</span>{" "}
                     {new Date(book.year ?? "").getFullYear()}
                   </p>
                   <p
@@ -92,8 +141,8 @@ export function BooksPage() {
                         : "text-red-600"
                     }
                   >
-                    <span className="font-medium">Skladem:</span>{" "}
-                    {book.actualQuantity ?? 0} ks
+                    <span className="font-medium">{t.books.inStock}:</span>{" "}
+                    {book.actualQuantity ?? 0} {t.books.pcs}
                   </p>
                 </div>
               </CardContent>
@@ -106,7 +155,7 @@ export function BooksPage() {
                   className="flex-1"
                 >
                   <ArrowUpRight className="h-4 w-4 mr-1" />
-                  Půjčit
+                  {t.books.borrow}
                 </Button>
                 <Button
                   size="sm"
@@ -115,7 +164,7 @@ export function BooksPage() {
                   className="flex-1"
                 >
                   <ArrowDownLeft className="h-4 w-4 mr-1" />
-                  Vrátit
+                  {t.books.return}
                 </Button>
               </CardFooter>
             </Card>
@@ -125,12 +174,13 @@ export function BooksPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Žádné knihy v knihovně</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              {isSearching ? t.books.noBooksFound : t.books.noBooks}
+            </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Modaly */}
       <CreateBookModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

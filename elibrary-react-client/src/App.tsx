@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
-import { Layout } from "./components";
-import { HomePage, BooksPage, HistoryPage } from "./pages";
+import { Layout, ToastContainer } from "./components";
+import { HomePage, BooksPage, HistoryPage, NotFoundPage } from "./pages";
 
 function App() {
   return (
@@ -13,8 +13,10 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/books" element={<BooksPage />} />
             <Route path="/history" element={<HistoryPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Layout>
+        <ToastContainer />
       </BrowserRouter>
     </QueryClientProvider>
   );

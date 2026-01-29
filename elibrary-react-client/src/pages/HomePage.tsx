@@ -1,16 +1,19 @@
 import { Link } from "react-router-dom";
 import { BookOpen, History, Plus } from "lucide-react";
 import { Card, CardContent } from "../components";
+import { useTranslation } from "../store/languageStore";
 
 export function HomePage() {
+  const { t } = useTranslation();
+
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Welcome to E-Library
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t.home.title}
         </h1>
-        <p className="mt-2 text-gray-600">
-          System for book administration - borrowing and returning books
+        <p className="mt-2 text-gray-600 dark:text-gray-400">
+          {t.home.subtitle}
         </p>
       </div>
 
@@ -19,9 +22,11 @@ export function HomePage() {
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardContent className="flex flex-col items-center py-8">
               <BookOpen className="h-12 w-12 text-blue-600 mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900">Books</h2>
-              <p className="mt-2 text-gray-600 text-center">
-                List of book in Library
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {t.home.booksCard}
+              </h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400 text-center">
+                {t.home.booksCardDesc}
               </p>
             </CardContent>
           </Card>
@@ -31,11 +36,11 @@ export function HomePage() {
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardContent className="flex flex-col items-center py-8">
               <Plus className="h-12 w-12 text-green-600 mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900">
-                Add a book
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {t.home.addBookCard}
               </h2>
-              <p className="mt-2 text-gray-600 text-center">
-                Add new book to a cataloque
+              <p className="mt-2 text-gray-600 dark:text-gray-400 text-center">
+                {t.home.addBookCardDesc}
               </p>
             </CardContent>
           </Card>
@@ -45,9 +50,11 @@ export function HomePage() {
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardContent className="flex flex-col items-center py-8">
               <History className="h-12 w-12 text-purple-600 mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900">History</h2>
-              <p className="mt-2 text-gray-600 text-center">
-                Show history of borrowing and returning books
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {t.home.historyCard}
+              </h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400 text-center">
+                {t.home.historyCardDesc}
               </p>
             </CardContent>
           </Card>

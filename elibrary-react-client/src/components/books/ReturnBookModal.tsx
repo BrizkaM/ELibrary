@@ -1,11 +1,15 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMemo } from "react";
 import { Button, Input, Modal } from "../ui";
 import { useReturnBook } from "../../hooks";
+import { useToast } from "../../store/toastStore";
+import { useTranslation } from "../../store/languageStore";
 import {
   borrowReturnSchema,
   type BorrowReturnFormData,
 } from "../../lib/validations";
+import { getErrorMessage } from "../../lib/errorHandler";
 import type { Book } from "../../types";
 
 interface ReturnBookModalProps {
@@ -20,6 +24,10 @@ export function ReturnBookModal({
   book,
 }: ReturnBookModalProps) {
   const returnBook = useReturnBook();
+  const toast = useToast();
+  const { t, translate } = useTranslation();
+
+  const schema = useMemo(() => borrowReturnSchema(t), [t]);
 
   const {
     register,
@@ -27,7 +35,7 @@ export function ReturnBookModal({
     reset,
     formState: { errors, isSubmitting },
   } = useForm<BorrowReturnFormData>({
-    resolver: zodResolver(borrowReturnSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       customerName: "",
     },
@@ -42,10 +50,16 @@ export function ReturnBookModal({
         customerName: data.customerName,
       });
 
+      toast.success(
+        translate(t.returnBook.success, {
+          book: book.name ?? "",
+          customer: data.customerName,
+        }),
+      );
       reset();
       onClose();
     } catch (error) {
-      console.error("Chyba při vracení knihy:", error);
+      toast.error(getErrorMessage(error, t));
     }
   };
 
@@ -55,37 +69,32 @@ export function ReturnBookModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Vrátit knihu">
-      <div className="mb-4 p-3 bg-green-50 rounded-lg">
-        <p className="text-sm text-green-800">
-          <span className="font-medium">Kniha:</span> {book?.name}
+    <Modal isOpen={isOpen} onClose={handleClose} title={t.returnBook.title}>
+      <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
+        <p className="text-sm text-green-800 dark:text-green-200">
+          <span className="font-medium">{t.returnBook.bookLabel}:</span>{" "}
+          {book?.name}
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Input
           id="customerName"
-          label="Jméno zákazníka"
-          placeholder="např. Jan Novák"
+          label={t.returnBook.customerLabel}
+          placeholder={t.returnBook.customerPlaceholder}
           error={errors.customerName?.message}
           {...register("customerName")}
         />
 
-        {returnBook.isError && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">Chyba při vracení knihy.</p>
-          </div>
-        )}
-
         <div className="flex justify-end gap-3 pt-4">
           <Button type="button" variant="secondary" onClick={handleClose}>
-            Zrušit
+            {t.cancel}
           </Button>
           <Button
             type="submit"
             isLoading={isSubmitting || returnBook.isPending}
           >
-            Vrátit
+            {t.returnBook.submit}
           </Button>
         </div>
       </form>

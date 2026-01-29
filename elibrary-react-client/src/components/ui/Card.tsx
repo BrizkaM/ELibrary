@@ -1,4 +1,4 @@
-import { type HTMLAttributes, forwardRef } from "react";
+import { forwardRef, type HTMLAttributes } from "react";
 import { cn } from "../../lib/utils";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {}
@@ -9,7 +9,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          "bg-white rounded-lg shadow-md border border-gray-200",
+          "bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700",
           className,
         )}
         {...props}
@@ -27,7 +27,10 @@ const CardHeader = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={cn("px-6 py-4 border-b border-gray-200", className)}
+        className={cn(
+          "px-6 py-4 border-b border-gray-200 dark:border-gray-700",
+          className,
+        )}
         {...props}
       >
         {children}
@@ -55,7 +58,10 @@ const CardFooter = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={cn("px-6 py-4 border-t border-gray-200", className)}
+        className={cn(
+          "px-6 py-4 border-t border-gray-200 dark:border-gray-700",
+          className,
+        )}
         {...props}
       >
         {children}
