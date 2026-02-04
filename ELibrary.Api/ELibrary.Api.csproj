@@ -30,4 +30,8 @@
     <ProjectReference Include="..\ELibrary.Infrastructure\ELibrary.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Configuration\" />
+  </ItemGroup>
+
 </Project>

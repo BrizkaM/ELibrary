@@ -1,0 +1,121 @@
+# =============================================================================
+# Docker Compose - Development Environment
+# =============================================================================
+# 
+# Usage:
+#   docker compose up -d          # Start all services
+#   docker compose logs -f        # View logs
+#   docker compose down           # Stop all services
+#   docker compose down -v        # Stop and remove volumes
+#
+# Services:
+#   - postgres: Database (port 5432)
+#   - keycloak: Identity provider (port 8080)
+#   - seq: Log aggregation (port 5341)
+#
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # PostgreSQL Database
+  # ===========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: elibrary-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-elibrary}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-elibrary123}
+      POSTGRES_DB: ${POSTGRES_DB:-elibrary_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: init scripts
+      # - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-elibrary} -d ${POSTGRES_DB:-elibrary_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - elibrary-network
+
+  # ===========================================================================
+  # Keycloak Identity Provider
+  # ===========================================================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: elibrary-keycloak
+    command: start-dev --import-realm
+    environment:
+      # Admin credentials
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      
+      # Database connection (uses same postgres)
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${KEYCLOAK_DB:-keycloak}
+      KC_DB_USERNAME: ${POSTGRES_USER:-elibrary}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-elibrary123}
+      
+      # Development settings
+      KC_HOSTNAME_STRICT: false
+      KC_HTTP_ENABLED: true
+      KC_PROXY: edge
+      
+      # Features
+      KC_FEATURES: token-exchange,admin-fine-grained-authz
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    volumes:
+      # Import realm configuration on startup
+      - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      # Custom themes (optional)
+      # - ./docker/keycloak/themes:/opt/keycloak/themes
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - elibrary-network
+
+  # ===========================================================================
+  # Seq - Log Aggregation (Development Only)
+  # ===========================================================================
+  seq:
+    image: datalust/seq:latest
+    container_name: elibrary-seq
+    environment:
+      ACCEPT_EULA: Y
+    ports:
+      - "${SEQ_PORT:-5341}:80"
+    volumes:
+      - seq_data:/data
+    restart: unless-stopped
+    networks:
+      - elibrary-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  seq_data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  elibrary-network:
+    driver: bridge

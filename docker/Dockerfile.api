@@ -1,0 +1,64 @@
+# =============================================================================
+# ELibrary API Dockerfile
+# =============================================================================
+# Multi-stage build for optimized production image
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Build
+# -----------------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+WORKDIR /src
+
+# Copy solution and project files first (better layer caching)
+COPY *.sln ./
+COPY src/ELibrary.Api/*.csproj ./src/ELibrary.Api/
+COPY src/ELibrary.Application/*.csproj ./src/ELibrary.Application/
+COPY src/ELibrary.Domain/*.csproj ./src/ELibrary.Domain/
+COPY src/ELibrary.Infrastructure/*.csproj ./src/ELibrary.Infrastructure/
+
+# Restore dependencies
+RUN dotnet restore
+
+# Copy everything else
+COPY . .
+
+# Build and publish
+RUN dotnet publish src/ELibrary.Api/ELibrary.Api.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore \
+    /p:UseAppHost=false
+
+# -----------------------------------------------------------------------------
+# Stage 2: Runtime
+# -----------------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
+WORKDIR /app
+
+# Install required packages
+RUN apk add --no-cache \
+    icu-libs \
+    curl
+
+# Security: Run as non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+# Copy published app
+COPY --from=build --chown=appuser:appgroup /app/publish .
+
+# Environment variables
+ENV ASPNETCORE_URLS=http://+:80
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost/health/live || exit 1
+
+# Expose port
+EXPOSE 80
+
+# Entry point
+ENTRYPOINT ["dotnet", "ELibrary.Api.dll"]
