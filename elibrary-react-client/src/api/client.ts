@@ -1,16 +1,19 @@
-import axios, { type InternalAxiosRequestConfig } from "axios";
-import { config } from "../lib/config";
-
 /**
  * Configured Axios instance for API calls.
  *
- * Features:
  * - Base URL from configuration
+ * - Automatic Bearer token injection
+ * - Token refresh on 401 errors
  * - Request/response logging in debug mode
- * - Error handling
- *
- * NOTE: Authentication will be added in Keycloak implementation phase.
  */
+
+import axios, { type InternalAxiosRequestConfig, AxiosError } from "axios";
+import { config } from "../lib/config";
+
+// =============================================================================
+// Axios Instance
+// =============================================================================
+
 export const apiClient = axios.create({
   baseURL: config.apiUrl,
   headers: {
@@ -20,7 +23,7 @@ export const apiClient = axios.create({
 });
 
 // =============================================================================
-// Token Management (placeholder for Keycloak implementation)
+// Token Management
 // =============================================================================
 
 let accessToken: string | null = null;
@@ -83,6 +86,24 @@ apiClient.interceptors.request.use(
 // Response Interceptor
 // =============================================================================
 
+// Flag to prevent multiple simultaneous refresh attempts
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: Error) => void;
+}> = [];
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else if (token) {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 apiClient.interceptors.response.use(
   (response) => {
     // Debug logging
@@ -98,11 +119,13 @@ apiClient.interceptors.response.use(
 
     return response;
   },
-  async (error) => {
+  async (error: AxiosError) => {
+    const originalRequest = error.config;
+
     // Debug logging
     if (config.features.debugMode) {
       console.error(
-        `❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+        `❌ API Error: ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`,
         {
           status: error.response?.status,
           data: error.response?.data,
@@ -111,12 +134,63 @@ apiClient.interceptors.response.use(
       );
     }
 
-    // TODO: Handle 401 Unauthorized after Keycloak implementation
-    // For now, just reject the error
-    if (error.response?.status === 401) {
-      console.warn(
-        "Unauthorized request - authentication will be implemented with Keycloak",
-      );
+    // Handle 401 Unauthorized - attempt token refresh
+    if (error.response?.status === 401 && originalRequest) {
+      // Check if we already tried to refresh for this request
+      if (
+        (originalRequest as typeof originalRequest & { _retry?: boolean })
+          ._retry
+      ) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        // Wait for refresh to complete, then retry
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: (token: string) => {
+              if (originalRequest.headers) {
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+              }
+              resolve(apiClient(originalRequest));
+            },
+            reject: (err: Error) => {
+              reject(err);
+            },
+          });
+        });
+      }
+
+      (
+        originalRequest as typeof originalRequest & { _retry?: boolean }
+      )._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Dynamic import to avoid circular dependency
+        const { useAuthStore } = await import("../store/authStore");
+        const refreshed = await useAuthStore.getState().refreshToken();
+
+        if (refreshed) {
+          const newToken = getAccessToken();
+          processQueue(null, newToken);
+
+          // Retry original request with new token
+          if (originalRequest.headers && newToken) {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          }
+          return apiClient(originalRequest);
+        } else {
+          // Refresh failed - user needs to login again
+          processQueue(new Error("Token refresh failed"), null);
+          return Promise.reject(error);
+        }
+      } catch (refreshError) {
+        processQueue(refreshError as Error, null);
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
 
     return Promise.reject(error);

@@ -1,8 +1,8 @@
 # =============================================================================
 # Docker Compose - Development Environment
 # =============================================================================
-# 
-# Usage:
+#
+# Usage (from docker/ folder):
 #   docker compose up -d          # Start all services
 #   docker compose logs -f        # View logs
 #   docker compose down           # Stop all services
@@ -14,8 +14,6 @@
 #   - seq: Log aggregation (port 5341)
 #
 # =============================================================================
-
-version: '3.8'
 
 services:
   # ===========================================================================
@@ -32,10 +30,13 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Optional: init scripts
-      # - ./docker/postgres/init:/docker-entrypoint-initdb.d
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-elibrary} -d ${POSTGRES_DB:-elibrary_db}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-elibrary} -d ${POSTGRES_DB:-elibrary_db}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -54,36 +55,38 @@ services:
       # Admin credentials
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-      
-      # Database connection (uses same postgres)
+
+      # Database connection
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/${KEYCLOAK_DB:-keycloak}
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER:-elibrary}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-elibrary123}
-      
+
       # Development settings
       KC_HOSTNAME_STRICT: false
       KC_HTTP_ENABLED: true
       KC_PROXY: edge
-      
+
       # Features
       KC_FEATURES: token-exchange,admin-fine-grained-authz
     ports:
       - "${KEYCLOAK_PORT:-8080}:8080"
     volumes:
-      # Import realm configuration on startup
-      - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
-      # Custom themes (optional)
-      # - ./docker/keycloak/themes:/opt/keycloak/themes
+      # Import realm configuration on startup (relative to docker-compose.yml)
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'",
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 90s
     restart: unless-stopped
     networks:
       - elibrary-network
@@ -95,7 +98,8 @@ services:
     image: datalust/seq:latest
     container_name: elibrary-seq
     environment:
-      ACCEPT_EULA: Y
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
     ports:
       - "${SEQ_PORT:-5341}:80"
     volumes:

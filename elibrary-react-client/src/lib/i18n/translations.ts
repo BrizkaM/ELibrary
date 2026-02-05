@@ -313,5 +313,12 @@ export const translations = {
   },
 } as const;
 
+// Helper type to convert literal strings to string
+type DeepStringify<T> = T extends string
+  ? string
+  : T extends object
+    ? { [K in keyof T]: DeepStringify<T[K]> }
+    : T;
+
 export type Language = keyof typeof translations;
-export type TranslationKeys = typeof translations.cs;
+export type TranslationKeys = DeepStringify<typeof translations.cs>;
