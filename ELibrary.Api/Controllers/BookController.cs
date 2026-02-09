@@ -7,6 +7,7 @@ using ELibrary.Application.DTOs;
 using ELibrary.Application.Queries.Books.GetAllBooks;
 using ELibrary.Application.Queries.Books.SearchBooks;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ELibrary.Api.Controllers
@@ -93,6 +94,7 @@ namespace ELibrary.Api.Controllers
         /// <response code="409">Book with same ISBN already exists</response>
         /// <response code="500">Internal server error</response>
         [HttpPost]
+        [Authorize]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -122,6 +124,7 @@ namespace ELibrary.Api.Controllers
         /// <response code="409">Book out of stock or concurrency conflict</response>
         /// <response code="500">Internal server error</response>
         [HttpPost("borrow")]
+        [Authorize]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -149,6 +152,7 @@ namespace ELibrary.Api.Controllers
         /// <response code="409">Concurrency conflict</response>
         /// <response code="500">Internal server error</response>
         [HttpPost("return")]
+        [Authorize]
         [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

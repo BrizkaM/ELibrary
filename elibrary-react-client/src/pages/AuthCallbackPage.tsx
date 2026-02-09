@@ -1,11 +1,11 @@
 /**
  * Auth Callback Page
- * 
+ *
  * Handles the OAuth 2.0 callback from Keycloak after successful login.
  * This page receives the authorization code and exchanges it for tokens.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
@@ -16,13 +16,21 @@ export function AuthCallbackPage() {
   const { handleCallback, error, isAuthenticated } = useAuthStore();
   const [localError, setLocalError] = useState<string | null>(null);
 
+  // Guard proti dvojitému zpracování
+  const isProcessing = useRef(false);
+
   useEffect(() => {
     const processCallback = async () => {
+      // Prevent double processing (React StrictMode)
+      if (isProcessing.current) return;
+      isProcessing.current = true;
+
       try {
         // Check for error in URL params (Keycloak error response)
         const errorParam = searchParams.get("error");
         if (errorParam) {
-          const errorDescription = searchParams.get("error_description") || errorParam;
+          const errorDescription =
+            searchParams.get("error_description") || errorParam;
           setLocalError(errorDescription);
           return;
         }
@@ -30,7 +38,9 @@ export function AuthCallbackPage() {
         // Process the callback
         await handleCallback(searchParams);
       } catch (err) {
-        setLocalError(err instanceof Error ? err.message : "Authentication failed");
+        setLocalError(
+          err instanceof Error ? err.message : "Authentication failed",
+        );
       }
     };
 
@@ -41,7 +51,9 @@ export function AuthCallbackPage() {
   useEffect(() => {
     if (isAuthenticated) {
       // Get the original destination or default to home
-      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+      const from =
+        (location.state as { from?: { pathname: string } })?.from?.pathname ||
+        "/";
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, location.state]);
@@ -56,9 +68,7 @@ export function AuthCallbackPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Přihlášení selhalo
           </h1>
-          <p className="text-red-600 dark:text-red-400 mb-4">
-            {displayError}
-          </p>
+          <p className="text-red-600 dark:text-red-400 mb-4">{displayError}</p>
           <button
             onClick={() => navigate("/")}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

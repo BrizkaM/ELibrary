@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using HealthChecks.UI.Client;
+using ELibrary.Api.Extensions;
 
 // ============================================================================
 // SERILOG EARLY INITIALIZATION
@@ -91,6 +92,9 @@ try
 
     // Presentation Layer (Controllers, Swagger, CORS)
     builder.Services.AddPresentation(builder.Configuration, builder.Environment);
+
+    // Keycloak authentication
+    builder.Services.AddKeycloakAuthentication(builder.Configuration);
 
     var app = builder.Build();
 
@@ -211,7 +215,10 @@ try
     });
 
     app.UseHttpsRedirection();
+
+    app.UseAuthentication();
     app.UseAuthorization();
+
     app.MapControllers();
 
     // ============================================================================
